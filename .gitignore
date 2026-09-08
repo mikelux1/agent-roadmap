@@ -1,0 +1,6 @@
+# your live roadmap and the agent's local sidecar are per-project, not part of this repo
+/roadmap-data.json
+.roadmap-agent.json
+.roadmap-*.tmp
+.DS_Store
+.claude/

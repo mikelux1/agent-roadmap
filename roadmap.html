@@ -1,0 +1,1366 @@
+<!doctype html>
+<!--
+  Agent Roadmap — a single-file release roadmap that you and your AI coding agent edit together.
+  https://github.com/mikelux1/agent-roadmap   ·   MIT license
+  No build, no server, no dependencies. Open this file in Chrome; pair it with roadmap.py for the agent side.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agent Roadmap</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --line:#dfe1e6; --ink:#172b4d; --mut:#6b778c;
+  --acc:#0c66e4; --acc-soft:#e9f2ff; --green:#22a06b; --green-soft:#dcfff1;
+  --amber:#b65c02; --amber-soft:#fff7d6; --gray:#626f86; --gray-soft:#f1f2f4;
+  --red:#c9372c; --red-soft:#ffeceb; --drop:#0c66e4;
+  --shadow:0 1px 2px rgba(9,30,66,.12);
+}
+html[data-theme="dark"]{
+  --bg:#161a1d; --card:#1d2125; --line:#33383d; --ink:#dee4ea; --mut:#8c9bab;
+  --acc:#579dff; --acc-soft:#1c2b41; --green:#4bce97; --green-soft:#1c3329;
+  --amber:#f5cd47; --amber-soft:#332e1b; --gray:#9fadbc; --gray-soft:#282e33;
+  --red:#f87168; --red-soft:#42221f; --drop:#579dff;
+  --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+code{background:var(--gray-soft);padding:1px 4px;border-radius:3px;font-size:12.5px}
+
+/* ── header ── */
+header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);
+  padding:10px 18px 0;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+header h1{font-size:17px;margin:0 6px 10px 0;font-weight:600}
+#saveState{font-size:12px;color:var(--mut);margin-bottom:10px;white-space:nowrap}
+#saveState.ok{color:var(--green)}
+#saveState.warn{color:var(--amber)}
+.tabs{display:flex;gap:2px;margin-bottom:-1px}
+.tab{padding:8px 14px;border:1px solid transparent;border-bottom:none;border-radius:6px 6px 0 0;
+  color:var(--mut);font-weight:500}
+.tab.on{background:var(--card);border-color:var(--line);color:var(--acc)}
+.tab .n{font-size:11px;background:var(--gray-soft);border-radius:8px;padding:0 6px;margin-left:4px}
+.hspace{flex:1}
+.hctl{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+#search{background:var(--card);border:1px solid var(--line);border-radius:5px;color:var(--ink);
+  padding:6px 10px;width:180px;font:inherit}
+.tbtn{border:1px solid var(--line);background:var(--card);border-radius:5px;padding:6px 10px;font-size:13px}
+.tbtn:hover{border-color:var(--acc);color:var(--acc)}
+.tbtn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+.tbtn.primary:hover{color:#fff;opacity:.9}
+label.tog{display:flex;gap:5px;align-items:center;font-size:13px;color:var(--mut);cursor:pointer;user-select:none}
+
+/* ── sync + highlight ── */
+#syncDot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-bottom:10px;flex:0 0 auto}
+#syncDot.live{background:var(--green);box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 25%,transparent);
+  animation:pulse 2.6s ease-in-out infinite}
+#syncDot.off{background:var(--gray)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+#hlBar,#conflictBar{display:none;width:100%;margin:-2px 0 10px;padding:8px 12px;border:1px solid var(--line);
+  border-radius:6px;font-size:13px;align-items:center;gap:10px;flex-wrap:wrap}
+#hlBar.show,#conflictBar.show{display:flex}
+#hlBar{background:var(--amber-soft);border-color:color-mix(in srgb,var(--amber) 40%,var(--line))}
+#conflictBar{background:var(--red-soft);border-color:color-mix(in srgb,var(--red) 40%,var(--line))}
+#hlBar .grow,#conflictBar .grow{flex:1}
+#hlBar .mut{color:var(--mut)}
+#hlBar button:disabled{opacity:.35;cursor:default}
+ul.conf{margin:4px 0 0;padding-left:18px}
+ul.conf li{margin:2px 0}
+/* highlighted nodes */
+.item.hl{background:var(--amber-soft);box-shadow:inset 3px 0 0 var(--amber)}
+.item.hl:hover{background:color-mix(in srgb,var(--amber-soft) 70%,var(--gray-soft))}
+.card.hl>.chead{background:var(--amber-soft);box-shadow:inset 3px 0 0 var(--amber)}
+.item.hlghost{opacity:.6;background:var(--red-soft);box-shadow:inset 3px 0 0 var(--red)}
+.item.hlghost .ititle .t{text-decoration:line-through}
+.item.hlghost .gx{color:var(--red);width:14px;text-align:center;margin-top:1px}
+.hlpip{font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--amber);
+  border:1px solid color-mix(in srgb,var(--amber) 50%,transparent);border-radius:3px;padding:0 4px;margin-left:6px;
+  flex:0 0 auto;align-self:center}
+
+/* ── file banner ── */
+#fileBanner{display:none;width:100%;margin:-2px 0 10px;padding:8px 12px;border:1px solid var(--line);
+  border-radius:6px;background:var(--amber-soft);color:var(--ink);font-size:13px;
+  align-items:center;gap:10px;flex-wrap:wrap}
+#fileBanner.show{display:flex}
+#fileBanner .grow{flex:1}
+
+/* ── board ── */
+main{max-width:960px;margin:0 auto;padding:18px 18px 60vh;transition:margin-right .15s}
+@media(min-width:1280px){ body.drawerOpen main{margin-right:492px} }
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);
+  margin-bottom:14px;overflow:hidden}
+.card.dragover{outline:2px solid var(--drop);outline-offset:-2px}
+.chead{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;user-select:none}
+.chead:hover{background:var(--gray-soft)}
+.chev{color:var(--mut);font-size:11px;transition:transform .12s;transform:rotate(0)}
+.card.openc .chev{transform:rotate(90deg)}
+.ctitle{font-weight:600;font-size:15px}
+.chip{font-size:11px;font-weight:600;letter-spacing:.4px;border-radius:3px;padding:2px 7px;text-transform:uppercase}
+.chip.planned{background:var(--gray-soft);color:var(--gray)}
+.chip.inprogress{background:var(--acc-soft);color:var(--acc)}
+.chip.submitted{background:var(--amber-soft);color:var(--amber)}
+.chip.released{background:var(--green-soft);color:var(--green)}
+.ccount{font-size:12px;color:var(--mut)}
+.cpts{font-size:11px;font-weight:600;background:var(--acc-soft);color:var(--acc);border-radius:8px;padding:1px 8px}
+.cbtns{margin-left:auto;display:flex;gap:2px;opacity:0;transition:opacity .1s}
+.chead:hover .cbtns{opacity:1}
+.cbtns button{color:var(--mut);padding:3px 6px;border-radius:4px;font-size:13px}
+.cbtns button:hover{background:var(--line);color:var(--ink)}
+.csub{padding:0 14px 10px 32px;color:var(--mut);font-size:13px}
+.csub p{margin:6px 0}
+.items{list-style:none;margin:0;padding:0 0 6px}
+.item{display:flex;align-items:flex-start;gap:8px;padding:7px 12px 7px 10px;border-top:1px solid var(--line);
+  cursor:pointer;position:relative}
+.item:hover{background:var(--gray-soft)}
+.item.sel{background:var(--acc-soft)}
+.item.dragging{opacity:.35}
+.item.dropbefore::before{content:"";position:absolute;left:0;right:0;top:-1px;height:2px;background:var(--drop)}
+.item.dropafter::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--drop)}
+.grip{color:var(--mut);cursor:grab;padding-top:1px;font-size:13px}
+.item input[type=checkbox]{margin-top:3px;accent-color:var(--green)}
+.ititle{flex:1;min-width:0}
+.item.done .ititle .t{color:var(--mut);text-decoration:line-through}
+.inote{color:var(--mut);font-size:12.5px}
+.inote.built{color:var(--amber)}
+.ipts{font-size:11px;font-weight:600;background:var(--acc-soft);color:var(--acc);border-radius:8px;
+  padding:1px 7px;margin-top:2px;white-space:nowrap}
+.item.done .ipts{background:var(--gray-soft);color:var(--mut)}
+.iedit{color:var(--mut);opacity:0;padding:1px 6px;border-radius:4px}
+.item:hover .iedit{opacity:1}
+.iedit:hover{background:var(--line);color:var(--ink)}
+.emptyrow{border-top:1px solid var(--line);border-radius:0;margin:0;padding:14px;text-align:center;
+  color:var(--mut);font-size:13px}
+.addrow{border-top:1px solid var(--line);padding:5px 10px}
+.addrow button{color:var(--mut);font-size:13px;padding:4px 8px;border-radius:4px}
+.addrow button:hover{background:var(--gray-soft);color:var(--acc)}
+.card.backlog .ctitle{color:var(--mut)}
+.grouphead{font-size:11.5px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--mut);margin:26px 2px 10px}
+.grouphead:first-child{margin-top:4px}
+
+/* ── notes ── */
+.notecard .chead{cursor:pointer}
+.notebody{padding:4px 16px 14px;border-top:1px solid var(--line);color:var(--ink);font-size:13.5px;max-width:900px}
+.notebody p{margin:8px 0}
+.notebody b.k{color:var(--ink)}
+.hint{color:var(--mut);font-size:12.5px;margin:10px 2px 40px}
+
+/* ── trash ── */
+.trow{display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid var(--line)}
+.trow:first-child{border-top:none}
+.trow .meta{color:var(--mut);font-size:12.5px}
+.trow .grow{flex:1}
+.tbtn.danger{color:var(--red);border-color:var(--line)}
+.tbtn.danger:hover{border-color:var(--red)}
+
+/* ── drawer (item notes, RIGHT side) ── */
+#drawer{position:fixed;top:0;right:0;bottom:0;z-index:30;background:var(--card);
+  border-left:2px solid var(--acc);box-shadow:-4px 0 16px rgba(0,0,0,.18);
+  width:min(480px,94vw);display:none;flex-direction:column}
+#drawer.open{display:flex}
+.dhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.dhead .t{font-weight:600;font-size:15px;line-height:1.3}
+.dwhere{color:var(--mut);font-size:12.5px;padding:8px 16px 0}
+.dbody{overflow-y:auto;padding:6px 16px 24px;flex:1}
+.dbody p{margin:8px 0}
+.dnote{color:var(--amber);font-size:13px;margin:8px 0 6px}
+.dpts{font-size:12.5px;color:var(--acc);margin:6px 0}
+.dempty{color:var(--mut);font-style:italic}
+
+/* ── dialogs ── */
+dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;
+  padding:20px;width:640px;max-width:94vw}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{margin:0 0 12px;font-size:15px}
+dialog label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px}
+dialog input[type=text],dialog input[type=number],dialog select,dialog textarea{width:100%;background:var(--bg);color:var(--ink);
+  border:1px solid var(--line);border-radius:5px;padding:7px 9px;font:inherit}
+dialog input[type=number]{width:130px}
+dialog textarea{min-height:180px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;line-height:1.5}
+.dlgrow{display:flex;gap:8px;align-items:center;margin-top:16px}
+.dlgrow .grow{flex:1}
+.dlgrow button{border:1px solid var(--line);border-radius:5px;padding:7px 14px}
+.dlgrow button.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+.dlgrow button.danger{color:var(--red)}
+@media(max-width:700px){#search{width:110px}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="appTitle">Roadmap</h1><span id="syncDot" class="off"></span><span id="saveState"></span>
+  <nav class="tabs">
+    <button class="tab on" data-tab="board">Board</button>
+    <button class="tab" data-tab="released">Released <span class="n" id="nRel"></span></button>
+    <button class="tab" data-tab="trash">Trash <span class="n" id="nTrash"></span></button>
+  </nav>
+  <span class="hspace"></span>
+  <div class="hctl">
+    <input id="search" type="search" placeholder="Filter items…">
+    <label class="tog" id="doneTogWrap"><input type="checkbox" id="showDone"> show done</label>
+    <label class="tog" id="hlTogWrap" title="Ring every item your agent touched in its most recent update to this file"><input type="checkbox" id="hlChk"> <span id="hlLabel">✨ last update</span></label>
+    <button class="tbtn primary" id="saveBtn" onclick="saveNow()">💾 Save</button>
+    <button class="tbtn" onclick="openRelEditor(null)">＋ Release</button>
+    <button class="tbtn" onclick="exportJSON()">Export JSON</button>
+    <button class="tbtn" onclick="importFile.click()">Import</button>
+    <button class="tbtn" id="themeBtn" onclick="toggleTheme()">☾</button>
+  </div>
+  <div id="fileBanner"></div>
+  <div id="hlBar">
+    <span id="hlInfo"></span>
+    <button class="tbtn" id="hlPrev" onclick="stepHL(1)" title="Older update">‹ older</button>
+    <button class="tbtn" id="hlNext" onclick="stepHL(-1)" title="Newer update">newer ›</button>
+    <button class="tbtn" id="hlJump" onclick="jumpHL()">Jump to first ↓</button>
+  </div>
+  <div id="conflictBar"></div>
+</header>
+
+<main id="view"></main>
+
+<div id="drawer">
+  <div class="dhead">
+    <span class="t" id="dTitle"></span>
+    <span class="hspace" style="flex:1"></span>
+    <button class="tbtn" onclick="editSelected()">✎ Edit</button>
+    <button class="tbtn" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="dwhere" id="dWhere"></div>
+  <div class="dbody" id="dBody"></div>
+</div>
+
+<dialog id="itemDlg"><form method="dialog" onsubmit="return false">
+  <h3 id="itemDlgTitle">Item</h3>
+  <label>Title</label><input type="text" id="f_title">
+  <label>Release / Backlog</label><select id="f_sec"></select>
+  <label>Short note (shown next to the title)</label><input type="text" id="f_note">
+  <label>Effort points (agile estimate — optional)</label><input type="number" id="f_pts" min="0" step="0.5" placeholder="—">
+  <label>Notes / details (HTML allowed — shown in the side panel)</label><textarea id="f_detail"></textarea>
+  <div class="dlgrow">
+    <label style="margin:0;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink)">
+      <input type="checkbox" id="f_done"> Done</label>
+    <span class="grow"></span>
+    <button class="danger" id="f_delete" onclick="trashItemFromDlg()">Delete</button>
+    <button onclick="itemDlg.close()">Cancel</button>
+    <button class="primary" onclick="saveItemDlg()">Save</button>
+  </div>
+</form></dialog>
+
+<dialog id="relDlg"><form method="dialog" onsubmit="return false">
+  <h3 id="relDlgTitle">Release</h3>
+  <label>Name</label><input type="text" id="r_title">
+  <label>Status</label>
+  <select id="r_status">
+    <option value="planned">Planned</option>
+    <option value="inprogress">In progress</option>
+    <option value="submitted">Submitted (in review)</option>
+    <option value="released">Released</option>
+  </select>
+  <label>Subtitle (optional, one line under the name)</label><input type="text" id="r_sub">
+  <div class="dlgrow">
+    <button class="danger" id="r_delete" onclick="trashRelFromDlg()">Delete</button>
+    <span class="grow"></span>
+    <button onclick="relDlg.close()">Cancel</button>
+    <button class="primary" onclick="saveRelDlg()">Save</button>
+  </div>
+</form></dialog>
+
+<dialog id="noteDlg"><form method="dialog" onsubmit="return false">
+  <h3>Note</h3>
+  <label>Title</label><input type="text" id="n_title">
+  <label>Body (HTML allowed)</label><textarea id="n_html"></textarea>
+  <div class="dlgrow">
+    <button class="danger" id="n_delete" onclick="trashNoteFromDlg()">Delete</button>
+    <span class="grow"></span>
+    <button onclick="noteDlg.close()">Cancel</button>
+    <button class="primary" onclick="saveNoteDlg()">Save</button>
+  </div>
+</form></dialog>
+
+<input type="file" id="importFile" accept=".json" style="display:none">
+
+<script>
+"use strict";
+// ═════════ baked demo seed (schema 3) — shown until you link or create a roadmap-data.json ═════════
+const SEED = {"schema":3,"project":"Drizzle","agent":"Agent","releases":[{"id":"v1-0","title":"v1.0 — First public release","status":"released","open":false,"sub":"Shipped. Everything a first release needs and nothing else. Released releases move to the <b>Released</b> tab.","items":[{"id":"v10-setup","title":"Set up the project, CI and a release script","done":true,"pts":2,"note":"DONE — one command builds and tags","detail":"<p>Items whose short note starts with <b>DONE</b>, <b>BUILT</b>, <b>READY</b> or <b>CODE COMPLETE</b> get an amber note, so you can see at a glance what is waiting on you rather than on the code.</p>"},{"id":"v10-today","title":"Show today's forecast for the current location","done":true,"pts":3,"detail":"<p>The core screen. Location → forecast API → one card with temperature, condition and an icon.</p>"},{"id":"v10-store","title":"App icon and store listing","done":true,"pts":1}]},{"id":"v1-1","title":"v1.1 — Fix what the first users hit","status":"inprogress","open":true,"sub":"Bugs and papercuts from the first week of feedback. The chip on the right is the release status: planned → in progress → submitted → released.","items":[{"id":"v11-crash","title":"Fix the crash when location permission is denied","done":true,"pts":2,"note":"DONE — shipped in build 12","detail":"<p>Repro: deny location on first launch → white screen. Root cause was an unwrapped optional in the location callback.</p><p>Tick the checkbox to mark an item done. Done items hide on the Board unless <b>show done</b> is on.</p>","mt":"2026-09-07T18:12:00.000Z","by":"human"},{"id":"v11-offline","title":"Cache the last forecast so the app opens offline","done":false,"pts":3,"note":"BUILT — needs a device test on a real flight-mode phone","detail":"<p><b>Click any item</b> to open this side panel. Details accept HTML, so an agent can leave a structured hand-off here.</p><p><b>Plan (written by the agent):</b></p><ul><li>Store the last successful response in app storage with its timestamp.</li><li>On launch, render the cached forecast immediately and refresh in the background.</li><li>Show a small “as of 14:05” label when the data is older than an hour.</li></ul><p>This item was edited by the agent in its last session, which is why it is ringed in amber when <b>✨ last update</b> is on.</p>","mt":"2026-09-08T09:30:00.000Z","by":"agent","sess":"c-demo-20260908"},{"id":"v11-hourly","title":"Hourly view for the next 24 hours","done":false,"pts":5,"detail":"<p>Hit <b>✎ Edit</b> to change the title, move it to another release, set effort points or rewrite these notes.</p><p>Drag the <b>⠿</b> grip to reorder items or drop them onto another release header.</p>"},{"id":"v11-units","title":"Settings screen: °C / °F toggle","done":false,"pts":2,"note":"added by the agent — the most requested thing in reviews","detail":"<p>The agent added this item from the command line:</p><pre>python3 roadmap.py add --section v1-1 --title \"Settings screen: °C / °F toggle\" --pts 2</pre><p>It shows a <b>NEW</b> pip while the last-update highlight is on.</p>","mt":"2026-09-08T09:30:00.000Z","by":"agent","sess":"c-demo-20260908"}]},{"id":"v1-2","title":"v1.2 — Home-screen widgets","status":"planned","open":false,"sub":"Not started. Effort points add up per release — the Σ badge in the header — so you can see if a release is getting too fat.","items":[{"id":"v12-small","title":"Small widget: current temperature and icon","done":false,"pts":3},{"id":"v12-medium","title":"Medium widget: the next six hours","done":false,"pts":5},{"id":"v12-refresh","title":"Widget refresh budget and battery testing","done":false,"pts":2,"note":"talk to the agent about the platform limits first"}]}],"backlog":{"open":true,"items":[{"id":"bl-alerts","title":"Severe weather alerts","done":false,"note":"needs a data source first","detail":"<p>The backlog is where ideas wait. Drag an item into a release when you commit to it.</p>"},{"id":"bl-share","title":"Share a forecast as an image","done":false,"pts":2},{"id":"bl-map","title":"Dark map tiles","done":false},{"id":"bl-api","title":"Migrate to the v2 forecast API","done":false,"note":"blocked until the new API keys arrive"}]},"notes":[{"id":"n-howto","title":"How this roadmap works (read me first)","open":true,"html":"<p><b class=k>Releases</b> hold <b class=k>items</b>. Items you have not committed to live in the <b class=k>Backlog</b>. Free-form <b class=k>notes</b> like this one sit at the bottom.</p><p><b class=k>Click</b> an item to read its details in the side panel · <b class=k>✎</b> to edit · <b class=k>⠿</b> to drag · <b class=k>checkbox</b> to mark it done · <b class=k>＋ Release</b> to add a release · <b class=k>▲▼</b> on a release header to reorder releases.</p><p><b class=k>Saving.</b> Right now this demo lives in your browser only. Press <b class=k>💾 Save</b> (or <b class=k>Create new file…</b> in the banner) to write a <code>roadmap-data.json</code> next to your project. From then on the page autosaves to that file and watches it for changes — the green dot means it is live.</p><p><b class=k>Export / Import</b> give you a plain JSON copy at any time. <b class=k>Trash</b> keeps everything you delete until you empty it.</p>"},{"id":"n-agent","title":"Working with an AI coding agent","open":true,"html":"<p>The point of this tool: <b class=k>you and your agent edit the same file</b>. You use this page; the agent uses <code>roadmap.py</code> from the terminal (Claude Code, Codex, Cursor, Copilot — anything that can run a Python script).</p><p>Every node the agent touches is stamped, so the <b class=k>✨ last update</b> toggle in the header rings exactly what changed in its most recent session — <b class=k>NEW</b>, <b class=k>EDITED</b>, <b class=k>MOVED</b>, or a struck-through ghost row for deletions. Turn it on now: two items in v1.1 and one deleted item were touched by a demo agent session. Use <b class=k>‹ older</b> / <b class=k>newer ›</b> to walk back through earlier sessions.</p><p>If you both edit the same field before the file syncs, <b class=k>your edit wins</b> and the agent's version is listed in a red banner so nothing is lost silently.</p><p>Tell your agent about the tool by pasting the snippet from <code>agent-instructions.md</code> into your <code>CLAUDE.md</code>, <code>AGENTS.md</code> or rules file.</p>"}],"trash":[{"kind":"item","from":"v1-1","at":"2026-09-08","payload":{"id":"v11-splash","title":"Remove the 2-second splash screen delay","done":false,"pts":1,"note":"moved into the crash fix — same code path"}}],"agentLog":[{"id":"c-demo-20260908","at":"2026-09-08T09:30:00.000Z","note":"Demo session: reviewed v1.1 after the crash fix landed","changes":[{"id":"v11-offline","title":"Cache the last forecast so the app opens offline","kind":"edit","section":"v1-1","fields":["detail","note"],"at":"2026-09-08T09:30:00.000Z","sess":"c-demo-20260908"},{"id":"v11-units","title":"Settings screen: °C / °F toggle","kind":"add","section":"v1-1","fields":[],"at":"2026-09-08T09:30:00.000Z","sess":"c-demo-20260908"},{"id":"v11-splash","title":"Remove the 2-second splash screen delay","kind":"delete","section":"v1-1","fields":[],"at":"2026-09-08T09:30:00.000Z","sess":"c-demo-20260908"}]}],"modified":"2026-09-08T09:30:00.000Z"};
+
+const KEY = "agent-roadmap-v1";
+const HL_KEY = "agent-roadmap-hl";
+const POLL_MS = 2000;                            // how often we look at the file on disk
+const THEME_KEY = "agent-roadmap-theme";
+const DEFAULT_FILENAME = "roadmap-data.json";
+const STATUS_LABEL = {planned:"Planned", inprogress:"In progress", submitted:"Submitted", released:"Released"};
+const FS_OK = typeof window.showOpenFilePicker === "function";
+function agentName(){ return (state && state.agent) || "Agent"; }
+
+function uid(){return "i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function esc(t){const d=document.createElement("div");d.textContent=t==null?"":t;return d.innerHTML;}
+function stripTags(h){const d=document.createElement("div");d.innerHTML=h;return d.textContent||"";}
+function today(){ return new Date().toISOString().slice(0,10); }
+
+// schema 2 (private predecessor) → schema 3: neutral field names
+function migrate(s){
+  if(s.schema===2){
+    if(s.agentLog && !s.agentLog){ s.agentLog=s.agentLog; } delete s.agentLog;
+    const BY={mike:"human", claude:"agent"};
+    for(const n of nodeIndex(s).values()) if(n.node.by in BY) n.node.by=BY[n.node.by];
+    s.schema=3;
+  }
+  if(!s.notes) s.notes=[];
+  if(!s.trash) s.trash=[];
+  return s;
+}
+function validState(s){
+  if(!(s && (s.schema===2||s.schema===3) && Array.isArray(s.releases) && s.backlog)) return false;
+  migrate(s); return true;
+}
+
+// ═════════ state ═════════
+let state;
+function loadLocal(){
+  try{ const raw=localStorage.getItem(KEY);
+    if(raw){ const s=JSON.parse(raw); if(validState(s)) return s; } }catch(e){}
+  return JSON.parse(JSON.stringify(SEED));
+}
+
+
+// ═════════════════════════════════════════════════════════════════
+//  SYNC ENGINE — live bidirectional file sync + 3-way merge
+// ═════════════════════════════════════════════════════════════════
+// Fields compared to decide "did this node change?" (view-only fields excluded)
+const CMP_FIELDS = {release:["title","status","sub"], item:["title","note","detail","done","pts"], note:["title","html"]};
+// Fields actually merged (includes view prefs, which never count as conflicts)
+const ALL_FIELDS = {release:["title","status","sub","open"], item:["title","note","detail","done","pts"], note:["title","html","open"]};
+
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+
+// normalised field value, so undefined/false/"" compare sanely across writers
+function fval(n,f){
+  const v=n[f];
+  if(f==="done"||f==="open") return !!v;
+  if(f==="pts") return (v===""||v==null||isNaN(parseFloat(v))) ? null : parseFloat(v);
+  return v==null ? "" : String(v);
+}
+function sameF(a,b,f){ return fval(a,f)===fval(b,f); }
+
+function sectionsOf(s){ const a=(s.releases||[]).slice(); if(s.backlog) a.push(s.backlog); return a; }
+function secById(s,id){ return id==="backlog" ? s.backlog : (s.releases||[]).find(r=>r.id===id); }
+
+// every addressable node in a state, keyed by id
+function nodeIndex(s){
+  const m=new Map();
+  (s.releases||[]).forEach(r=>{
+    m.set(r.id,{kind:"release",node:r,parent:"#rel"});
+    (r.items||[]).forEach(it=>m.set(it.id,{kind:"item",node:it,parent:r.id}));
+  });
+  if(s.backlog) (s.backlog.items||[]).forEach(it=>m.set(it.id,{kind:"item",node:it,parent:"backlog"}));
+  (s.notes||[]).forEach(n=>m.set(n.id,{kind:"note",node:n,parent:"#notes"}));
+  return m;
+}
+
+function removeNode(s,id){
+  for(const sec of sectionsOf(s)){
+    const i=(sec.items||[]).findIndex(x=>x.id===id);
+    if(i>=0){ sec.items.splice(i,1); return true; }
+  }
+  let i=(s.releases||[]).findIndex(r=>r.id===id);
+  if(i>=0){ s.releases.splice(i,1); return true; }
+  i=(s.notes||[]).findIndex(n=>n.id===id);
+  if(i>=0){ s.notes.splice(i,1); return true; }
+  return false;
+}
+function insertNode(s, tn, theirs){
+  const n=clone(tn.node);
+  if(tn.kind==="item"){
+    const sec=secById(s,tn.parent); if(!sec) return;
+    if(!sec.items) sec.items=[];
+    const tsec=secById(theirs,tn.parent);
+    const idx=tsec&&tsec.items ? tsec.items.findIndex(x=>x.id===n.id) : -1;
+    sec.items.splice(idx<0?sec.items.length:Math.min(idx,sec.items.length),0,n);
+  } else if(tn.kind==="release"){
+    if(!s.releases) s.releases=[];
+    const idx=(theirs.releases||[]).findIndex(r=>r.id===n.id);
+    s.releases.splice(idx<0?s.releases.length:Math.min(idx,s.releases.length),0,n);
+  } else {
+    if(!s.notes) s.notes=[]; s.notes.push(n);
+  }
+}
+function moveNode(s,id,toSec){
+  let node=null;
+  for(const sec of sectionsOf(s)){
+    const i=(sec.items||[]).findIndex(x=>x.id===id);
+    if(i>=0){ node=sec.items.splice(i,1)[0]; break; }
+  }
+  if(!node) return;
+  const dest=secById(s,toSec); if(!dest){ (s.backlog.items=s.backlog.items||[]).push(node); return; }
+  if(!dest.items) dest.items=[]; dest.items.push(node);
+}
+function orderOf(s,secId){ const sec=secById(s,secId); return sec&&sec.items ? sec.items.map(i=>i.id) : null; }
+function sameArr(a,b){ return a&&b&&a.length===b.length&&a.every((v,i)=>v===b[i]); }
+
+// ── three-way merge: base = last file content we agreed on, mine = browser, theirs = disk ──
+function merge3(base, mine, theirs){
+  const out=clone(mine), conflicts=[], incomingIds=new Set();
+  const B=nodeIndex(base), M=nodeIndex(mine), T=nodeIndex(theirs);
+
+  // 1. nodes deleted on disk — honour unless you edited them since
+  for(const [id,bn] of B){
+    if(T.has(id) || !M.has(id)) continue;
+    const mn=M.get(id);
+    let youEdited=false;
+    for(const f of (CMP_FIELDS[mn.kind]||[])) if(!sameF(bn.node,mn.node,f)){ youEdited=true; break; }
+    if(youEdited) conflicts.push({id, title:mn.node.title||id, field:"(deleted)", mine:"kept", theirs:"deleted"});
+    else removeNode(out,id);
+  }
+  // 2. nodes added on disk
+  for(const [id,tn] of T){
+    if(B.has(id) || M.has(id)) continue;
+    insertNode(out,tn,theirs); incomingIds.add(id);
+  }
+  // 3. field-level merge on nodes all three know about
+  const O=nodeIndex(out);
+  for(const [id,on] of O){
+    const bn=B.get(id), tn=T.get(id), mn=M.get(id);
+    if(!bn||!tn||!mn) continue;
+    let took=false;
+    for(const f of (ALL_FIELDS[on.kind]||[])){
+      const bv=fval(bn.node,f), mv=fval(mn.node,f), tv=fval(tn.node,f);
+      if(tv===bv) continue;                                   // disk unchanged → yours stands
+      if(mv===bv){                                            // only disk changed → take it
+        if(tn.node[f]===undefined) delete on.node[f]; else on.node[f]=tn.node[f];
+        if(f!=="open"){ took=true; incomingIds.add(id); }
+        continue;
+      }
+      if(mv===tv) continue;                                   // same edit both sides
+      if(f==="open") continue;                                // view pref: yours wins, silently
+      conflicts.push({id, title:mn.node.title||id, field:f, mine:mv, theirs:tv});
+    }
+    // moved to another release on disk, and you didn't move it
+    if(on.kind==="item" && tn.parent!==bn.parent && mn.parent===bn.parent){
+      moveNode(out,id,tn.parent); took=true; incomingIds.add(id);
+    }
+    if(took && tn.node.mt){ on.node.mt=tn.node.mt; on.node.by=tn.node.by; if(tn.node.sess) on.node.sess=tn.node.sess; }
+  }
+  // 4. ordering — per section, yours wins only if you actually reordered
+  const survivors=new Set(nodeIndex(out).keys());
+  for(const secId of [...(out.releases||[]).map(r=>r.id), "backlog"]){
+    const sec=secById(out,secId); if(!sec||!sec.items) continue;
+    const mo=(orderOf(mine,secId)||[]).filter(i=>survivors.has(i));
+    const bo=(orderOf(base,secId)||[]).filter(i=>survivors.has(i));
+    if(!sameArr(mo,bo)) continue;                             // you reordered → keep yours
+    const to=(orderOf(theirs,secId)||[]).filter(i=>survivors.has(i));
+    if(!to.length) continue;
+    const byId=new Map(sec.items.map(i=>[i.id,i]));
+    const seq=[]; to.forEach(i=>{ if(byId.has(i)){ seq.push(byId.get(i)); byId.delete(i); } });
+    byId.forEach(v=>seq.push(v));
+    sec.items=seq;
+  }
+  // release order — same rule
+  const mrel=(mine.releases||[]).map(r=>r.id).filter(i=>survivors.has(i));
+  const brel=(base.releases||[]).map(r=>r.id).filter(i=>survivors.has(i));
+  if(sameArr(mrel,brel)){
+    const trel=(theirs.releases||[]).map(r=>r.id).filter(i=>survivors.has(i));
+    if(trel.length){
+      const byId=new Map((out.releases||[]).map(r=>[r.id,r]));
+      const seq=[]; trel.forEach(i=>{ if(byId.has(i)){ seq.push(byId.get(i)); byId.delete(i); } });
+      byId.forEach(v=>seq.push(v));
+      out.releases=seq;
+    }
+  }
+  // 5. trash — union, newest first
+  const key=t=>JSON.stringify([t.kind,t.at,(t.payload&&t.payload.id)||""]);
+  const seen=new Set((out.trash||[]).map(key));
+  (theirs.trash||[]).forEach(t=>{ if(!seen.has(key(t))){ out.trash.push(t); seen.add(key(t)); } });
+  out.trash.sort((a,b)=>String(b.at||"").localeCompare(String(a.at||"")));
+  // 6. the agent's change log is owned by the CLI side
+  if(theirs.agentLog) out.agentLog=theirs.agentLog;
+
+  return {state:out, conflicts, incoming:[...incomingIds]};
+}
+
+// ── stamp your edits by diffing the last snapshot against current state ──
+let lastSnap=null;
+function stampMine(){
+  if(!lastSnap) return 0;
+  const a=nodeIndex(lastSnap), b=nodeIndex(state);
+  const now=new Date().toISOString(); let n=0;
+  for(const [id,cur] of b){
+    const old=a.get(id);
+    let changed=false;
+    if(!old) changed=true;
+    else if(old.parent!==cur.parent) changed=true;
+    else for(const f of (CMP_FIELDS[cur.kind]||[])) if(!sameF(old.node,cur.node,f)){ changed=true; break; }
+    if(changed){ cur.node.mt=now; cur.node.by="human"; delete cur.node.sess; n++; }
+  }
+  return n;
+}
+
+// ── live polling ──
+let baseState=null, lastFileMtime=0, writing=false, pollTimer=null, syncErr=0;
+let overrides=[];
+
+function stopPoll(){ if(pollTimer){ clearInterval(pollTimer); pollTimer=null; } }
+function startPoll(){
+  stopPoll();
+  if(!fileHandle || filePerm!=="granted") return;
+  pollTimer=setInterval(pollFile, POLL_MS);
+}
+// Chrome throttles background-tab timers to ~1/min, so poll the moment you come back
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) pollFile(); });
+window.addEventListener("focus",()=>pollFile());
+
+async function readDisk(){
+  const f=await fileHandle.getFile();
+  if(f.lastModified===lastFileMtime) return {unchanged:true, mtime:f.lastModified};
+  const txt=await f.text();
+  let s=null; try{ s=JSON.parse(txt); }catch(e){ return {partial:true}; }  // mid-write: retry next tick
+  if(!validState(s)) return {partial:true};
+  return {state:s, mtime:f.lastModified};
+}
+
+async function pollFile(){
+  if(!fileHandle || filePerm!=="granted" || writing) return;
+  try{
+    const r=await readDisk();
+    if(r.unchanged||r.partial) return;
+    lastFileMtime=r.mtime;
+    applyIncoming(r.state);
+    syncErr=0;
+  }catch(e){ syncErr++; if(syncErr===3) setSaveState("⚠ lost sight of the file","warn"); }
+}
+
+// merge a disk state into memory, then repaint
+function applyIncoming(disk){
+  const prevSessions=(state.agentLog||[]).length;
+  if(!baseState){ baseState=clone(disk); state=disk; lastSnap=clone(state); render(); return; }
+  const r=merge3(baseState, state, disk);
+  state=r.state;
+  baseState=clone(disk);
+  lastSnap=clone(state);
+  if(r.conflicts.length){ overrides=overrides.concat(r.conflicts); }
+  const newSession=(state.agentLog||[]).length>prevSessions ||
+    (state.agentLog||[]).length && lastSeenSessionId!==latestSessionId();
+  if(newSession){ hlIdx=0; lastSeenSessionId=latestSessionId(); }
+  // whatever we merged in has to go back to disk so both sides converge
+  const merged=JSON.stringify(state), onDisk=JSON.stringify(disk);
+  if(merged!==onDisk){ state.modified=new Date().toISOString();
+    try{ localStorage.setItem(KEY,JSON.stringify(state)); }catch(e){}
+    scheduleFileWrite(); }
+  updateSyncUI();
+  render();
+  if(r.incoming.length||newSession) flashSync(r.incoming.length);
+}
+
+function flashSync(n){
+  setSaveState("↓ "+(n||"")+" change"+(n===1?"":"s")+" from "+agentName(),"ok");
+}
+
+// ═════════════════════════════════════════════════════════════════
+//  HIGHLIGHT — "what did the agent change in its last update?"
+// ═════════════════════════════════════════════════════════════════
+let hlOn = (localStorage.getItem(HL_KEY)||"1")==="1";
+let hlIdx = 0;                       // 0 = most recent agent session, 1 = the one before, …
+let lastSeenSessionId = null;
+let HL = null;                       // Map(id → change record) for the current render pass
+
+function sessionList(){ return (state.agentLog||[]); }
+function latestSessionId(){ const L=sessionList(); return L.length ? L[L.length-1].id : null; }
+function activeSession(){
+  const L=sessionList(); if(!L.length) return null;
+  return L[Math.max(0, L.length-1-hlIdx)];
+}
+function buildHL(){
+  const s=activeSession();
+  if(!hlOn||!s) return null;
+  const m=new Map(); (s.changes||[]).forEach(c=>m.set(c.id,c)); return m;
+}
+function fmtWhen(iso){
+  if(!iso) return "";
+  const d=new Date(iso), n=new Date();
+  const mins=Math.round((n-d)/60000);
+  if(mins<1) return "just now";
+  if(mins<60) return mins+" min ago";
+  if(d.toDateString()===n.toDateString()) return "today "+d.toTimeString().slice(0,5);
+  return d.toISOString().slice(0,10)+" "+d.toTimeString().slice(0,5);
+}
+function toggleHL(on){
+  hlOn=on; localStorage.setItem(HL_KEY, on?"1":"0");
+  if(on){ hlIdx=0; lastSeenSessionId=latestSessionId(); }
+  updateHLBar(); render();
+}
+function stepHL(d){
+  const L=sessionList(); if(!L.length) return;
+  hlIdx=Math.min(L.length-1, Math.max(0, hlIdx+d));
+  updateHLBar(); render();
+}
+function tabOf(id){
+  for(const r of (state.releases||[])){
+    if(r.id===id) return r.status==="released" ? "released" : "board";
+    if((r.items||[]).some(i=>i.id===id)) return r.status==="released" ? "released" : "board";
+  }
+  if((state.backlog.items||[]).some(i=>i.id===id)) return "board";
+  if((state.notes||[]).some(n=>n.id===id)) return "board";
+  return null;   // deleted by the agent — the ghost row lives wherever its section is
+}
+function hlTabCounts(){
+  const s=activeSession(); const c={board:0, released:0, gone:0};
+  for(const ch of ((s&&s.changes)||[])){
+    if(ch.kind==="delete"){
+      const rel=(state.releases||[]).find(r=>r.id===ch.section);
+      c[rel && rel.status==="released" ? "released" : "board"]++;
+    } else { const t=tabOf(ch.id); if(t) c[t]++; else c.gone++; }
+  }
+  return c;
+}
+function switchTab(name){
+  tab=name;
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on", x.dataset.tab===name));
+  closeDrawer(); render();
+}
+function jumpHL(){
+  let el=document.querySelector("#view .item.hl, #view .card.hl, #view .hlghost");
+  if(!el){
+    // the changes are sitting on the other tab — go there rather than doing nothing
+    const c=hlTabCounts();
+    const want = c[tab] ? tab : (c.board ? "board" : (c.released ? "released" : null));
+    if(want && want!==tab){ switchTab(want); el=document.querySelector("#view .item.hl, #view .card.hl, #view .hlghost"); }
+  }
+  if(el) el.scrollIntoView({behavior:"smooth", block:"center"});
+}
+function updateHLBar(){
+  const bar=document.getElementById("hlBar");
+  document.getElementById("hlChk").checked=hlOn;
+  const L=sessionList(), s=activeSession();
+  if(!hlOn){ bar.className=""; return; }
+  bar.className="show";
+  if(!s){
+    document.getElementById("hlInfo").textContent=agentName()+" hasn’t written to this file yet.";
+    ["hlPrev","hlNext","hlJump"].forEach(i=>document.getElementById(i).style.display="none");
+    return;
+  }
+  ["hlPrev","hlNext","hlJump"].forEach(i=>document.getElementById(i).style.display="");
+  const n=(s.changes||[]).length;
+  const which = hlIdx===0 ? "latest update" : (hlIdx+1)+" updates ago";
+  const c=hlTabCounts(), other = tab==="board" ? c.released : c.board;
+  document.getElementById("hlInfo").innerHTML =
+    "<b>"+n+"</b> change"+(n===1?"":"s")+" · "+esc(fmtWhen(s.at))+" · <span class='mut'>"+esc(which)+"</span>"+
+    (s.note?" — "+esc(s.note):"")+
+    (other?" <span class='mut'>· "+other+" on the "+(tab==="board"?"Released":"Board")+" tab</span>":"");
+  document.getElementById("hlPrev").disabled = hlIdx>=L.length-1;
+  document.getElementById("hlNext").disabled = hlIdx<=0;
+}
+function ghostRow(c){
+  const li=document.createElement("li"); li.className="item hlghost";
+  li.innerHTML='<span class="grip" style="visibility:hidden">⠿</span>'+
+    '<span class="gx">✕</span>'+
+    '<span class="ititle"><span class="t">'+esc(c.title||c.id)+'</span>'+
+    ' <span class="inote">— deleted by '+esc(agentName())+'</span></span>';
+  return li;
+}
+
+// ── conflict banner: your edit won, the agent's was dropped ──
+function updateConflictBar(){
+  const b=document.getElementById("conflictBar");
+  if(!overrides.length){ b.className=""; b.innerHTML=""; return; }
+  b.className="show";
+  const list=overrides.slice(-6).map(o=>"<li><b>"+esc(o.title)+"</b> — your <code>"+esc(o.field)+
+    "</code> kept, "+esc(agentName())+"’s “"+esc(String(o.theirs).slice(0,60))+"” dropped</li>").join("");
+  b.innerHTML="<div style='flex:1'><b>"+overrides.length+" of "+esc(agentName())+"’s edits "+(overrides.length===1?"was":"were")+
+    " overridden by yours</b><ul class='conf'>"+list+"</ul></div>";
+  const btn=document.createElement("button"); btn.className="tbtn"; btn.textContent="Dismiss";
+  btn.onclick=()=>{ overrides=[]; updateConflictBar(); };
+  b.appendChild(btn);
+}
+
+function updateSyncUI(){
+  updateHLBar(); updateConflictBar();
+  const el=document.getElementById("syncDot");
+  if(!el) return;
+  if(fileHandle && filePerm==="granted"){ el.className="live"; el.title="Live-synced with "+fileHandle.name+" (checks every "+(POLL_MS/1000)+"s)"; }
+  else { el.className="off"; el.title="Not linked to a file — browser storage only"; }
+}
+
+// ═════════ local file persistence (File System Access API) ═════════
+let fileHandle=null, filePerm="none", fileWriteTimer=null, fileDirty=false;
+
+function idb(){ return new Promise((res,rej)=>{
+  const rq=indexedDB.open("agent-roadmap",1);
+  rq.onupgradeneeded=()=>rq.result.createObjectStore("kv");
+  rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error);
+});}
+async function idbGet(k){ const db=await idb(); return new Promise((res,rej)=>{
+  const rq=db.transaction("kv").objectStore("kv").get(k);
+  rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); });}
+async function idbSet(k,v){ const db=await idb(); return new Promise((res,rej)=>{
+  const tx=db.transaction("kv","readwrite"); tx.objectStore("kv").put(v,k);
+  tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); });}
+
+async function restoreHandle(){
+  if(!FS_OK) return;
+  try{
+    const h=await idbGet("dataFile");
+    if(!h) return;
+    fileHandle=h;
+    filePerm=await h.queryPermission({mode:"readwrite"});
+  }catch(e){ fileHandle=null; }
+}
+async function adoptFile(){
+  // file is connected & readable: reconcile file vs browser copy by modified stamp
+  try{
+    const f=await fileHandle.getFile();
+    const txt=await f.text();
+    let fs=null; try{ fs=JSON.parse(txt); }catch(e){}
+    if(validState(fs)){
+      const fMod=fs.modified||"", lMod=(state&&state.modified)||"";
+      if(lMod && fMod && lMod>fMod){
+        if(confirm("The browser copy is NEWER than “"+fileHandle.name+"”.\n\nOK = merge the browser copy into the file (nothing is lost — conflicts are listed for review).\nCancel = load the file and discard the newer browser edits.")){
+          // treat the file as an incoming change against the browser copy
+          baseState=clone(fs); lastSnap=clone(state);
+          const r=merge3(fs, state, fs);   // base==theirs → keeps every browser edit, no conflicts
+          state=r.state; fileDirty=true;
+        } else { state=fs; baseState=clone(fs); }
+      } else { state=fs; baseState=clone(fs); }
+      lastSnap=clone(state);
+      lastFileMtime=f.lastModified;
+      lastSeenSessionId=latestSessionId();
+    } else if(txt.trim().length){
+      alert("“"+fileHandle.name+"” doesn’t look like a roadmap JSON — leaving it untouched and staying on browser storage.");
+      fileHandle=null; filePerm="none"; return;
+    } else { fileDirty=true; } // empty new file → seed it
+    filePerm="granted";
+  }catch(e){
+    alert("Couldn’t read the roadmap file: "+e.message);
+    fileHandle=null; filePerm="none";
+  }
+}
+async function reconnectFile(){       // user gesture
+  if(!fileHandle) return;
+  try{
+    filePerm=await fileHandle.requestPermission({mode:"readwrite"});
+    if(filePerm==="granted"){ await adoptFile(); save(); startPoll(); render(); }
+  }catch(e){}
+  updateFileUI(); updateSyncUI();
+}
+async function linkExistingFile(){    // user gesture
+  if(!FS_OK) return;
+  try{
+    const [h]=await window.showOpenFilePicker({types:[{description:"Roadmap JSON",accept:{"application/json":[".json"]}}]});
+    fileHandle=h; filePerm="granted";
+    await idbSet("dataFile",h);
+    await adoptFile(); save(); startPoll(); render();
+  }catch(e){ /* cancelled */ }
+  updateFileUI(); updateSyncUI();
+}
+async function createNewFile(){       // user gesture
+  if(!FS_OK) return;
+  try{
+    const h=await window.showSaveFilePicker({suggestedName:DEFAULT_FILENAME,
+      types:[{description:"Roadmap JSON",accept:{"application/json":[".json"]}}]});
+    fileHandle=h; filePerm="granted"; fileDirty=true;
+    await idbSet("dataFile",h);
+    await writeFile(); startPoll(); updateFileUI(); updateSyncUI();
+  }catch(e){ /* cancelled */ }
+}
+async function writeFile(){
+  if(!fileHandle || filePerm!=="granted" || writing) return false;
+  writing=true;
+  try{
+    // never blind-overwrite: if the file moved under us, merge that in first
+    const f=await fileHandle.getFile();
+    if(lastFileMtime && f.lastModified!==lastFileMtime){
+      const txt=await f.text();
+      let disk=null; try{ disk=JSON.parse(txt); }catch(e){}
+      if(validState(disk)){
+        lastFileMtime=f.lastModified;
+        if(baseState){
+          const r=merge3(baseState, state, disk);
+          state=r.state;
+          if(r.conflicts.length) overrides=overrides.concat(r.conflicts);
+        } else { state=disk; }
+        baseState=clone(disk);
+      } else if(txt.trim().length){
+        setSaveState("⚠ file unreadable — not overwriting","warn"); writing=false; return false;
+      }
+    }
+    const out=JSON.stringify(state,null,2);
+    const w=await fileHandle.createWritable();
+    await w.write(out);
+    await w.close();
+    const nf=await fileHandle.getFile();
+    lastFileMtime=nf.lastModified;
+    baseState=JSON.parse(out); lastSnap=JSON.parse(out);
+    fileDirty=false; setSaveState("✓ saved → "+fileHandle.name,"ok");
+    writing=false;
+    updateSyncUI(); render();
+    return true;
+  }catch(e){ writing=false; setSaveState("⚠ file write failed","warn"); return false; }
+}
+function scheduleFileWrite(){
+  fileDirty=true;
+  clearTimeout(fileWriteTimer);
+  fileWriteTimer=setTimeout(writeFile,600);
+}
+async function saveNow(){             // the Save button
+  save();
+  if(fileHandle && filePerm==="granted"){ clearTimeout(fileWriteTimer); await writeFile(); }
+  else if(fileHandle && FS_OK){ await reconnectFile(); if(filePerm==="granted"){ await writeFile(); } }
+  else if(FS_OK){ await createNewFile(); }
+}
+window.addEventListener("beforeunload",()=>{ if(fileDirty && fileHandle && filePerm==="granted"){ writeFile(); } });
+
+function setSaveState(msg,cls){
+  const el=document.getElementById("saveState");
+  el.textContent=msg; el.className=cls||"";
+  clearTimeout(setSaveState._t);
+  if(cls==="ok") setSaveState._t=setTimeout(()=>{ el.textContent=fileLabel(); el.className=""; },2000);
+}
+function fileLabel(){
+  if(fileHandle && filePerm==="granted") return "→ "+fileHandle.name;
+  return "browser-only";
+}
+function updateFileUI(){
+  const b=document.getElementById("fileBanner");
+  if(!FS_OK){
+    b.className="show";
+    b.innerHTML='This browser can’t write local files (File System Access API missing) — running on browser storage + Export JSON. Use Chrome for file saving.';
+  } else if(fileHandle && filePerm==="granted"){
+    b.className=""; b.innerHTML="";
+  } else if(fileHandle){
+    b.className="show";
+    b.innerHTML='Roadmap file <b>'+esc(fileHandle.name)+'</b> is linked but needs permission this session. <span class="grow"></span>';
+    const btn=document.createElement("button"); btn.className="tbtn primary"; btn.textContent="Reconnect file";
+    btn.onclick=reconnectFile; b.appendChild(btn);
+  } else {
+    b.className="show";
+    b.innerHTML='Demo data — not linked to a JSON file yet, so edits live only in this browser. <span class="grow"></span>';
+    const b1=document.createElement("button"); b1.className="tbtn primary"; b1.textContent="Link "+DEFAULT_FILENAME+"…";
+    b1.onclick=linkExistingFile;
+    const b2=document.createElement("button"); b2.className="tbtn"; b2.textContent="Create new file…";
+    b2.onclick=createNewFile;
+    b.appendChild(b1); b.appendChild(b2);
+  }
+  if(!document.getElementById("saveState").className) document.getElementById("saveState").textContent=fileLabel();
+}
+
+// autosave: every mutation → localStorage immediately + debounced file write
+let saveTimer=null;
+function save(){
+  stampMine();
+  state.modified=new Date().toISOString();
+  // a full localStorage (or a browser that blocks it) must never stop the app rendering
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch(e){ setSaveState("⚠ browser storage unavailable — the JSON file is the record","warn"); }
+  if(fileHandle && filePerm==="granted"){ scheduleFileWrite(); }
+  else { setSaveState("✓ saved (browser only)","ok"); }
+  lastSnap=clone(state);
+}
+
+// section access: backlog behaves like a pseudo-release with id "backlog"
+function getSection(id){ return id==="backlog" ? state.backlog : state.releases.find(r=>r.id===id); }
+function sectionTitle(id){ return id==="backlog" ? "Backlog" : (state.releases.find(r=>r.id===id)||{}).title || "?"; }
+function findItem(id){
+  for(const r of state.releases){ const i=r.items.findIndex(x=>x.id===id);
+    if(i>=0) return {secId:r.id, sec:r, idx:i, item:r.items[i]}; }
+  const i=state.backlog.items.findIndex(x=>x.id===id);
+  if(i>=0) return {secId:"backlog", sec:state.backlog, idx:i, item:state.backlog.items[i]};
+  return null;
+}
+function ptsOf(items){ return (items||[]).reduce((s,i)=>s+(parseFloat(i.pts)||0),0); }
+function fmtPts(n){ return (Math.round(n*10)/10).toString(); }
+
+// ═════════ tabs / filters ═════════
+let tab="board", selectedId=null;
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
+  tab=b.dataset.tab;
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));
+  closeDrawer(); render();
+});
+const searchBox=document.getElementById("search");
+const showDone=document.getElementById("showDone");
+searchBox.oninput=render;
+showDone.onchange=render;
+document.getElementById("hlChk").onchange=e=>toggleHL(e.target.checked);
+
+// ═════════ render ═════════
+function render(){
+  HL=buildHL();
+  document.getElementById("appTitle").textContent=(state.project?state.project+" · ":"")+"Roadmap";
+  document.title=(state.project?state.project+" · ":"")+"Roadmap";
+  document.getElementById("hlLabel").textContent="✨ "+agentName()+"’s last update";
+  updateHLBar(); updateConflictBar();
+  document.getElementById("nRel").textContent = state.releases.filter(r=>r.status==="released").length;
+  document.getElementById("nTrash").textContent = state.trash.length;
+  document.getElementById("doneTogWrap").style.display = tab==="board" ? "" : "none";
+  const v=document.getElementById("view"); v.innerHTML="";
+  if(tab==="board") renderBoard(v);
+  else if(tab==="released") renderReleased(v);
+  else renderTrash(v);
+}
+
+function matches(it){
+  const q=searchBox.value.trim().toLowerCase();
+  if(!q) return true;
+  return (it.title+" "+(it.note||"")).toLowerCase().includes(q);
+}
+
+function renderBoard(v){
+  const gh1=document.createElement("div"); gh1.className="grouphead"; gh1.textContent="Releases"; v.appendChild(gh1);
+  const active=state.releases.filter(r=>r.status!=="released");
+  if(!active.length){ const e=document.createElement("div"); e.className="hint"; e.textContent="No active releases — ＋ Release to add one."; v.appendChild(e); }
+  for(const r of active) v.appendChild(sectionCard(r, r.id, {reorder:true}));
+
+  const gh2=document.createElement("div"); gh2.className="grouphead"; gh2.textContent="Backlog"; v.appendChild(gh2);
+  v.appendChild(sectionCard(Object.assign({title:"Backlog", status:null}, state.backlog), "backlog", {backlog:true}));
+
+  const gh3=document.createElement("div"); gh3.className="grouphead"; gh3.textContent="Notes"; v.appendChild(gh3);
+  for(const n of state.notes) v.appendChild(noteCard(n));
+  const add=document.createElement("div"); add.className="addrow"; add.style.border="none";
+  const b=document.createElement("button"); b.textContent="＋ note"; b.onclick=()=>openNoteEditor(null);
+  add.appendChild(b); v.appendChild(add);
+  const h=document.createElement("div"); h.className="hint";
+  h.textContent="Click an item to read its notes in the side panel · drag ⠿ to move items · autosaves to the linked JSON file (and this browser).";
+  v.appendChild(h);
+}
+
+function renderReleased(v){
+  const rel=state.releases.filter(r=>r.status==="released");
+  if(!rel.length){ const e=document.createElement("div"); e.className="hint"; e.textContent="Nothing released yet."; v.appendChild(e); return; }
+  for(const r of rel) v.appendChild(sectionCard(r, r.id, {released:true}));
+}
+
+function sectionCard(sec, secId, opts){
+  opts=opts||{};
+  const card=document.createElement("section");
+  card.className="card"+(opts.backlog?" backlog":"")+(sec.open?" openc":"")+((HL&&HL.has(secId))?" hl":"");
+  card.dataset.sec=secId;
+
+  const items=sec.items||[];
+  const done=items.filter(i=>i.done).length;
+  const pts=ptsOf(items);
+  const head=document.createElement("div"); head.className="chead";
+  head.innerHTML='<span class="chev">▶</span><span class="ctitle">'+esc(sec.title)+'</span>'+
+    (sec.status && sec.status!=="backlog" ? '<span class="chip '+sec.status+'">'+STATUS_LABEL[sec.status]+'</span>' : '')+
+    '<span class="ccount">'+done+'/'+items.length+'</span>'+
+    (pts>0?'<span class="cpts" title="Total effort points in this release">Σ '+fmtPts(pts)+' pts</span>':'')+
+    '<span class="cbtns">'+
+      (opts.reorder?'<button data-act="up" title="Move up">▲</button><button data-act="down" title="Move down">▼</button>':'')+
+      (secId!=="backlog"?'<button data-act="edit" title="Edit release">✎</button>':'')+
+    '</span>';
+  head.onclick=e=>{
+    const act=e.target.dataset && e.target.dataset.act;
+    if(act==="edit"){ openRelEditor(secId); return; }
+    if(act==="up"||act==="down"){ moveRelease(secId, act==="up"?-1:1); return; }
+    sec.open=!sec.open; card.classList.toggle("openc",sec.open); ul.style.display=sec.open?"":"none";
+    if(subEl) subEl.style.display=sec.open?"":"none";
+    if(addEl) addEl.style.display=sec.open?"":"none";
+    save();
+  };
+  card.appendChild(head);
+  wireHeaderDrop(head, secId);
+
+  let subEl=null;
+  if(sec.sub){ subEl=document.createElement("div"); subEl.className="csub"; subEl.innerHTML=sec.sub; card.appendChild(subEl); }
+
+  const ul=document.createElement("ul"); ul.className="items";
+  const hideDone = tab==="board" && !showDone.checked;
+  let shown=0;
+  for(const it of items){
+    if(hideDone && it.done && !(HL&&HL.has(it.id))) continue;   // never hide what you're being shown
+    if(!matches(it)) continue;
+    ul.appendChild(itemRow(it, secId)); shown++;
+  }
+  if(HL){
+    const s=activeSession();
+    for(const c of ((s&&s.changes)||[])) if(c.kind==="delete" && c.section===secId){ ul.appendChild(ghostRow(c)); shown++; }
+  }
+  if(!shown){
+    const z=document.createElement("li"); z.className="emptyrow";
+    z.textContent = items.length ? "all items hidden by filter" : "no items — drag some here";
+    ul.appendChild(z);
+  }
+  card.appendChild(ul);
+  wireListDrop(ul, secId);
+
+  let addEl=null;
+  if(!opts.released){
+    addEl=document.createElement("div"); addEl.className="addrow";
+    const b=document.createElement("button"); b.textContent="＋ item";
+    b.onclick=()=>openItemEditor(null, secId); addEl.appendChild(b); card.appendChild(addEl);
+  }
+  if(!sec.open){ ul.style.display="none"; if(subEl) subEl.style.display="none"; if(addEl) addEl.style.display="none"; }
+  return card;
+}
+
+function itemRow(it, secId){
+  const li=document.createElement("li");
+  const hlc=HL&&HL.get(it.id);
+  li.className="item"+(it.done?" done":"")+(it.id===selectedId?" sel":"")+(hlc?" hl":"");
+  li.draggable=true; li.dataset.id=it.id;
+  const noteCls=/^(BUILT|CODE COMPLETE|READY|DONE)/i.test(it.note||"")?"inote built":"inote";
+  const p=parseFloat(it.pts);
+  li.innerHTML='<span class="grip" title="Drag to move">⠿</span>'+
+    '<input type="checkbox" '+(it.done?"checked":"")+'>'+
+    '<span class="ititle"><span class="t">'+esc(it.title)+'</span>'+
+    (it.note?' <span class="'+noteCls+'">— '+esc(it.note)+'</span>':'')+'</span>'+
+    (p>0?'<span class="ipts" title="Effort points">'+fmtPts(p)+' pts</span>':'')+
+    (hlc?'<span class="hlpip" title="'+esc(agentName())+' '+esc(hlc.kind)+(hlc.fields?" · "+esc(hlc.fields.join(", ")):"")+'">'+esc(hlc.kind==="add"?"NEW":hlc.kind==="move"?"MOVED":"EDITED")+'</span>':'')+
+    '<button class="iedit" title="Edit">✎</button>';
+  li.querySelector("input").onclick=e=>{
+    e.stopPropagation();
+    it.done=e.target.checked;
+    if(selectedId===it.id) closeDrawer();   // checking an item dismisses its open details panel
+    save(); render();
+  };
+  li.querySelector(".iedit").onclick=e=>{ e.stopPropagation(); openItemEditor(it.id); };
+  li.onclick=()=>openDrawer(it.id);
+  wireItemDrag(li);
+  return li;
+}
+
+function noteCard(n){
+  const card=document.createElement("section"); card.className="card notecard"+(n.open?" openc":"")+((HL&&HL.has(n.id))?" hl":"");
+  const head=document.createElement("div"); head.className="chead";
+  head.innerHTML='<span class="chev">▶</span><span class="ctitle" style="font-weight:500;font-size:14px">'+esc(n.title)+'</span>'+
+    '<span class="cbtns"><button data-act="edit" title="Edit note">✎</button></span>';
+  const body=document.createElement("div"); body.className="notebody"; body.innerHTML=n.html||"";
+  body.style.display=n.open?"":"none";
+  head.onclick=e=>{
+    if(e.target.dataset && e.target.dataset.act==="edit"){ openNoteEditor(n.id); return; }
+    n.open=!n.open; card.classList.toggle("openc",n.open); body.style.display=n.open?"":"none"; save();
+  };
+  card.appendChild(head); card.appendChild(body);
+  return card;
+}
+
+// ═════════ trash ═════════
+function renderTrash(v){
+  const card=document.createElement("section"); card.className="card"; card.style.overflow="visible";
+  if(!state.trash.length){
+    const e=document.createElement("div"); e.className="emptyrow"; e.style.borderTop="none";
+    e.textContent="Trash is empty."; card.appendChild(e); v.appendChild(card); return;
+  }
+  for(const t of state.trash){
+    const row=document.createElement("div"); row.className="trow";
+    const what = t.kind==="release" ? "release ("+(t.payload.items||[]).length+" items)"
+               : t.kind==="note" ? "note" : "item";
+    const title = t.payload.title;
+    row.innerHTML='<span>'+esc(title)+'</span>'+
+      '<span class="meta">'+what+(t.from?' · from “'+esc(sectionTitle(t.from))+'”':'')+' · '+esc(t.at||"")+'</span>'+
+      '<span class="grow"></span>';
+    const rb=document.createElement("button"); rb.className="tbtn"; rb.textContent="Restore";
+    rb.onclick=()=>restoreTrash(t);
+    const db=document.createElement("button"); db.className="tbtn danger"; db.textContent="Delete forever";
+    db.onclick=()=>{ if(confirm("Permanently delete “"+title+"”?")){
+      state.trash=state.trash.filter(x=>x!==t); save(); render(); } };
+    row.appendChild(rb); row.appendChild(db); card.appendChild(row);
+  }
+  v.appendChild(card);
+  const eb=document.createElement("button"); eb.className="tbtn danger"; eb.textContent="Empty trash";
+  eb.style.marginTop="4px";
+  eb.onclick=()=>{ if(confirm("Permanently delete all "+state.trash.length+" trashed entries?")){
+    state.trash=[]; save(); render(); } };
+  v.appendChild(eb);
+}
+function trashItem(id){
+  const f=findItem(id); if(!f) return;
+  f.sec.items.splice(f.idx,1);
+  state.trash.unshift({kind:"item", payload:f.item, from:f.secId, at:today()});
+  if(selectedId===id) closeDrawer();
+  save(); render();
+}
+function restoreTrash(t){
+  state.trash=state.trash.filter(x=>x!==t);
+  if(t.kind==="item"){
+    const sec=getSection(t.from) || state.backlog;
+    sec.items.push(t.payload);
+  } else if(t.kind==="release"){
+    state.releases.push(t.payload);
+  } else if(t.kind==="note"){
+    state.notes.push(t.payload);
+  }
+  save(); render();
+}
+
+// ═════════ drawer (item notes, right side) ═════════
+function openDrawer(id){
+  const f=findItem(id); if(!f) return;
+  selectedId=id;
+  document.getElementById("dTitle").textContent=f.item.title;
+  document.getElementById("dWhere").textContent="in "+sectionTitle(f.secId)+(f.item.done?" · done":"");
+  const p=parseFloat(f.item.pts);
+  const b=document.getElementById("dBody");
+  b.innerHTML=(p>0?'<div class="dpts">Effort: '+fmtPts(p)+' pts</div>':"")+
+    (f.item.note?'<div class="dnote">— '+esc(f.item.note)+'</div>':"")+
+    (f.item.detail || '<span class="dempty">No notes on this item yet — hit ✎ Edit to add some.</span>');
+  document.getElementById("drawer").classList.add("open");
+  document.body.classList.add("drawerOpen");
+  document.querySelectorAll(".item").forEach(el=>el.classList.toggle("sel",el.dataset.id===id));
+}
+function closeDrawer(){
+  selectedId=null;
+  document.getElementById("drawer").classList.remove("open");
+  document.body.classList.remove("drawerOpen");
+  document.querySelectorAll(".item.sel").forEach(el=>el.classList.remove("sel"));
+}
+function editSelected(){ if(selectedId) openItemEditor(selectedId); }
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeDrawer(); });
+
+// ═════════ item editor ═════════
+const itemDlg=document.getElementById("itemDlg");
+let editItemId=null;
+function openItemEditor(id, secId){
+  editItemId=id;
+  const sel=document.getElementById("f_sec"); sel.innerHTML="";
+  const groups=[["Active", state.releases.filter(r=>r.status!=="released")],
+                ["", [{id:"backlog",title:"Backlog"}]],
+                ["Released", state.releases.filter(r=>r.status==="released")]];
+  for(const [lab,arr] of groups){ for(const r of arr){
+    const o=document.createElement("option"); o.value=r.id;
+    o.textContent=(lab==="Released"?"[released] ":"")+r.title; sel.appendChild(o); } }
+  if(id){
+    const f=findItem(id); if(!f) return;
+    document.getElementById("itemDlgTitle").textContent="Edit item";
+    document.getElementById("f_title").value=f.item.title;
+    document.getElementById("f_note").value=f.item.note||"";
+    document.getElementById("f_pts").value=(parseFloat(f.item.pts)>0)?f.item.pts:"";
+    document.getElementById("f_detail").value=f.item.detail||"";
+    document.getElementById("f_done").checked=!!f.item.done;
+    sel.value=f.secId;
+    document.getElementById("f_delete").style.display="";
+  } else {
+    document.getElementById("itemDlgTitle").textContent="New item";
+    document.getElementById("f_title").value=""; document.getElementById("f_note").value="";
+    document.getElementById("f_pts").value="";
+    document.getElementById("f_detail").value=""; document.getElementById("f_done").checked=false;
+    sel.value=secId||"backlog";
+    document.getElementById("f_delete").style.display="none";
+  }
+  itemDlg.showModal();
+}
+function saveItemDlg(){
+  const title=document.getElementById("f_title").value.trim();
+  if(!title) return;
+  const secId=document.getElementById("f_sec").value;
+  const ptsRaw=document.getElementById("f_pts").value;
+  const vals={ title, note:document.getElementById("f_note").value.trim(),
+    pts: ptsRaw===""?undefined:parseFloat(ptsRaw),
+    detail:document.getElementById("f_detail").value, done:document.getElementById("f_done").checked };
+  if(editItemId){
+    const f=findItem(editItemId); if(!f) return;
+    Object.assign(f.item, vals);
+    if(vals.pts===undefined) delete f.item.pts;
+    if(f.secId!==secId){
+      f.sec.items.splice(f.idx,1); getSection(secId).items.push(f.item);
+      if(selectedId===editItemId) closeDrawer();   // moved to a different release → dismiss panel
+    } else if(selectedId===editItemId){ openDrawer(editItemId); }
+  } else {
+    const it=Object.assign({id:uid()}, vals);
+    if(it.pts===undefined) delete it.pts;
+    getSection(secId).items.push(it);
+  }
+  itemDlg.close(); save(); render();
+}
+function trashItemFromDlg(){ if(editItemId){ itemDlg.close(); trashItem(editItemId); } }
+
+// ═════════ release editor ═════════
+const relDlg=document.getElementById("relDlg");
+let editRelId=null;
+function openRelEditor(id){
+  editRelId=id;
+  if(id){
+    const r=state.releases.find(x=>x.id===id); if(!r) return;
+    document.getElementById("relDlgTitle").textContent="Edit release";
+    document.getElementById("r_title").value=r.title;
+    document.getElementById("r_status").value=r.status;
+    document.getElementById("r_sub").value=stripTags(r.sub||"");
+    document.getElementById("r_delete").style.display="";
+  } else {
+    document.getElementById("relDlgTitle").textContent="New release";
+    document.getElementById("r_title").value="";
+    document.getElementById("r_status").value="planned";
+    document.getElementById("r_sub").value="";
+    document.getElementById("r_delete").style.display="none";
+  }
+  relDlg.showModal();
+}
+function saveRelDlg(){
+  const title=document.getElementById("r_title").value.trim();
+  if(!title) return;
+  const vals={ title, status:document.getElementById("r_status").value,
+    sub:document.getElementById("r_sub").value.trim() };
+  if(editRelId){
+    Object.assign(state.releases.find(x=>x.id===editRelId), vals);
+  } else {
+    state.releases.push(Object.assign({id:uid(), open:true, items:[]}, vals));
+  }
+  relDlg.close(); save(); render();
+}
+function trashRelFromDlg(){
+  if(!editRelId) return;
+  const r=state.releases.find(x=>x.id===editRelId);
+  if(!confirm("Move release “"+r.title+"” and its "+r.items.length+" items to Trash?")) return;
+  state.releases=state.releases.filter(x=>x!==r);
+  state.trash.unshift({kind:"release", payload:r, from:null, at:today()});
+  if(selectedId && r.items.some(i=>i.id===selectedId)) closeDrawer();
+  relDlg.close(); save(); render();
+}
+function moveRelease(id, dir){
+  const vis=state.releases.filter(r=>r.status!=="released");
+  const vi=vis.findIndex(r=>r.id===id);
+  const ti=vi+dir;
+  if(ti<0||ti>=vis.length) return;
+  const a=state.releases.indexOf(vis[vi]), b=state.releases.indexOf(vis[ti]);
+  [state.releases[a], state.releases[b]]=[state.releases[b], state.releases[a]];
+  save(); render();
+}
+
+// ═════════ note editor ═════════
+const noteDlg=document.getElementById("noteDlg");
+let editNoteId=null;
+function openNoteEditor(id){
+  editNoteId=id;
+  if(id){
+    const n=state.notes.find(x=>x.id===id); if(!n) return;
+    document.getElementById("n_title").value=n.title;
+    document.getElementById("n_html").value=n.html||"";
+    document.getElementById("n_delete").style.display="";
+  } else {
+    document.getElementById("n_title").value="";
+    document.getElementById("n_html").value="";
+    document.getElementById("n_delete").style.display="none";
+  }
+  noteDlg.showModal();
+}
+function saveNoteDlg(){
+  const title=document.getElementById("n_title").value.trim();
+  if(!title) return;
+  if(editNoteId){
+    const n=state.notes.find(x=>x.id===editNoteId);
+    n.title=title; n.html=document.getElementById("n_html").value;
+  } else {
+    state.notes.push({id:uid(), title, html:document.getElementById("n_html").value, open:true});
+  }
+  noteDlg.close(); save(); render();
+}
+function trashNoteFromDlg(){
+  if(!editNoteId) return;
+  const n=state.notes.find(x=>x.id===editNoteId);
+  state.notes=state.notes.filter(x=>x!==n);
+  state.trash.unshift({kind:"note", payload:n, from:null, at:today()});
+  noteDlg.close(); save(); render();
+}
+
+// ═════════ drag & drop ═════════
+let dragId=null;
+function wireItemDrag(li){
+  li.addEventListener("dragstart",e=>{
+    dragId=li.dataset.id; li.classList.add("dragging");
+    e.dataTransfer.effectAllowed="move"; e.dataTransfer.setData("text/plain",dragId);
+  });
+  li.addEventListener("dragend",()=>{ dragId=null; li.classList.remove("dragging"); clearDropMarks(); });
+  li.addEventListener("dragover",e=>{
+    if(!dragId||dragId===li.dataset.id) return;
+    e.preventDefault(); e.dataTransfer.dropEffect="move";
+    clearDropMarks();
+    const r=li.getBoundingClientRect();
+    li.classList.add(e.clientY < r.top+r.height/2 ? "dropbefore" : "dropafter");
+  });
+  li.addEventListener("drop",e=>{
+    if(!dragId||dragId===li.dataset.id) return;
+    e.preventDefault(); e.stopPropagation();
+    const before=li.classList.contains("dropbefore");
+    moveItemNear(dragId, li.dataset.id, before);
+  });
+}
+function clearDropMarks(){
+  document.querySelectorAll(".dropbefore,.dropafter").forEach(el=>el.classList.remove("dropbefore","dropafter"));
+  document.querySelectorAll(".card.dragover").forEach(el=>el.classList.remove("dragover"));
+}
+function wireListDrop(ul, secId){
+  ul.addEventListener("dragover",e=>{ if(dragId){ e.preventDefault(); } });
+  ul.addEventListener("drop",e=>{
+    if(!dragId) return; e.preventDefault();
+    moveItemToEnd(dragId, secId);
+  });
+}
+function wireHeaderDrop(head, secId){
+  head.addEventListener("dragover",e=>{
+    if(dragId){ e.preventDefault(); head.parentElement.classList.add("dragover"); }
+  });
+  head.addEventListener("dragleave",()=>head.parentElement.classList.remove("dragover"));
+  head.addEventListener("drop",e=>{
+    if(!dragId) return; e.preventDefault(); e.stopPropagation();
+    moveItemToEnd(dragId, secId);
+  });
+}
+function moveItemNear(id, targetId, before){
+  const f=findItem(id), t=findItem(targetId);
+  if(!f||!t) return;
+  if(f.secId!==t.secId && selectedId===id) closeDrawer();   // moved to a different release → dismiss panel
+  f.sec.items.splice(f.idx,1);
+  const ti=t.sec.items.indexOf(t.item);
+  t.sec.items.splice(before?ti:ti+1, 0, f.item);
+  clearDropMarks(); save(); render();
+}
+function moveItemToEnd(id, secId){
+  const f=findItem(id); if(!f) return;
+  if(f.secId===secId && f.idx===f.sec.items.length-1){ clearDropMarks(); return; }
+  if(f.secId!==secId && selectedId===id) closeDrawer();     // moved to a different release → dismiss panel
+  f.sec.items.splice(f.idx,1);
+  getSection(secId).items.push(f.item);
+  clearDropMarks(); save(); render();
+}
+
+// ═════════ export / import ═════════
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="roadmap-export-"+today()+".json";
+  a.click(); URL.revokeObjectURL(a.href);
+}
+document.getElementById("importFile").onchange=e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const s=JSON.parse(rd.result);
+      if(!validState(s)) throw new Error("not a roadmap JSON export");
+      if(!confirm("Replace the current roadmap with “"+file.name+"”? The replaced state stays recoverable only if you exported it (the linked JSON file will also be overwritten).")) return;
+      state=s; closeDrawer(); save(); render();
+    }catch(err){ alert("Import failed: "+err.message); }
+    e.target.value="";
+  };
+  rd.readAsText(file);
+};
+
+// ═════════ theme ═════════
+let theme=new URLSearchParams(location.search).get("theme")||localStorage.getItem(THEME_KEY)||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+function applyTheme(){
+  document.documentElement.dataset.theme=theme;
+  document.getElementById("themeBtn").textContent = theme==="dark"?"☀":"☾";
+}
+function toggleTheme(){ theme=theme==="dark"?"light":"dark"; localStorage.setItem(THEME_KEY,theme); applyTheme(); }
+
+// ═════════ boot ═════════
+(async function boot(){
+  applyTheme();
+  state=loadLocal();
+  lastSnap=clone(state);
+  updateFileUI(); updateSyncUI(); render();   // first paint from browser/seed state
+  await restoreHandle();
+  if(fileHandle && filePerm==="granted"){ await adoptFile(); }
+  lastSeenSessionId=latestSessionId();
+  document.getElementById("hlChk").checked=hlOn;
+  updateFileUI(); updateSyncUI();
+  startPoll();
+  save(); render();
+  // #item-id in the URL opens that item's panel (agents can link straight to an item)
+  const want=decodeURIComponent(location.hash.slice(1));
+  if(want && findItem(want)){ if(tabOf(want)!==tab) switchTab(tabOf(want)); openDrawer(want);
+    const el=document.querySelector('.item[data-id="'+CSS.escape(want)+'"]'); if(el) el.scrollIntoView({block:"center"}); }
+})();
+</script>
+</body>
+</html>
