@@ -46,7 +46,7 @@
           "done": true,
           "pts": 2,
           "note": "DONE — shipped in build 12",
-          "detail": "<p>Repro: deny location on first launch → white screen. Root cause was an unwrapped optional in the location callback.</p><p>Tick the checkbox to mark an item done. Done items hide on the Board unless <b>show done</b> is on.</p>",
+          "detail": "<p>Repro: deny location on first launch → white screen. Root cause was an unwrapped optional in the location callback.</p><p>Ticking a row <b>selects</b> it — the release header turns into a bar that marks the whole selection done, moves it, or deletes it. A done item gets a green ✓ and hides on the Board unless <b>show done</b> is on. For a single item, <b>✎ Edit</b> has a Done checkbox too.</p>",
           "mt": "2026-09-07T18:12:00.000Z",
           "by": "human"
         },
@@ -144,7 +144,7 @@
       "id": "n-howto",
       "title": "How this roadmap works (read me first)",
       "open": true,
-      "html": "<p><b class=k>Releases</b> hold <b class=k>items</b>. Items you have not committed to live in the <b class=k>Backlog</b>. Free-form <b class=k>notes</b> like this one sit at the bottom.</p><p><b class=k>Click</b> an item to read its details in the side panel · <b class=k>✎</b> to edit · <b class=k>⠿</b> to drag · <b class=k>checkbox</b> to mark it done · <b class=k>＋ Release</b> to add a release · <b class=k>▲▼</b> on a release header to reorder releases.</p><p><b class=k>Saving.</b> Right now this demo lives in your browser only. Press <b class=k>💾 Save</b> (or <b class=k>Create new file…</b> in the banner) to write a <code>roadmap-data.json</code> next to your project. From then on the page autosaves to that file and watches it for changes — the green dot means it is live.</p><p><b class=k>Export / Import</b> give you a plain JSON copy at any time. <b class=k>Trash</b> keeps everything you delete until you empty it.</p>"
+      "html": "<p><b class=k>Releases</b> hold <b class=k>items</b>. Items you have not committed to live in the <b class=k>Backlog</b>. Free-form <b class=k>notes</b> like this one sit at the bottom.</p><p><b class=k>Click</b> an item to read its details in the side panel · <b class=k>✎</b> to edit · <b class=k>⠿</b> to drag · <b class=k>checkbox</b> to select rows · <b class=k>＋ Release</b> to add a release · <b class=k>▲▼</b> on a release header to reorder releases.</p><p><b class=k>Numbers and bulk actions.</b> Every row is numbered <code>1..n</code> inside its release, so you and your agent can both say “item 3”. Tick a few rows and the release header becomes a bar that marks them done, moves them to another release or deletes them — and a ticked set drags as one block.</p><p><b class=k>Saving.</b> Right now this demo lives in your browser only. Press <b class=k>💾 Save</b> (or <b class=k>Create new file…</b> in the banner) to write a <code>roadmap-data.json</code> next to your project. From then on the page autosaves to that file and watches it for changes — the green dot means it is live.</p><p><b class=k>Export / Import</b> give you a plain JSON copy at any time. <b class=k>Trash</b> keeps everything you delete until you empty it.</p>"
     },
     {
       "id": "n-agent",

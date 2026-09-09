@@ -106,19 +106,38 @@ main{max-width:960px;margin:0 auto;padding:18px 18px 60vh;transition:margin-righ
 .cpts{font-size:11px;font-weight:600;background:var(--acc-soft);color:var(--acc);border-radius:8px;padding:1px 8px}
 .cbtns{margin-left:auto;display:flex;gap:2px;opacity:0;transition:opacity .1s}
 .chead:hover .cbtns{opacity:1}
+/* bulk-selection bar — replaces .cbtns on the release head while items are ticked */
+.bulk{margin-left:auto;display:flex;align-items:center;gap:6px;opacity:1}
+.bulkn{font-size:11.5px;font-weight:600;background:var(--acc);color:#fff;
+  border-radius:8px;padding:2px 8px;white-space:nowrap}
+.bulk button{font-size:12px;padding:3px 9px;border-radius:5px;color:var(--ink);
+  background:var(--gray-soft);border:1px solid var(--line);white-space:nowrap}
+.bulk button:hover{background:var(--line)}
+.bulk button.danger{color:var(--red)}
+.bulk button.ghost{background:none;border-color:transparent;color:var(--mut)}
+.bulk button.ghost:hover{background:var(--gray-soft);color:var(--ink)}
 .cbtns button{color:var(--mut);padding:3px 6px;border-radius:4px;font-size:13px}
 .cbtns button:hover{background:var(--line);color:var(--ink)}
 .csub{padding:0 14px 10px 32px;color:var(--mut);font-size:13px}
 .csub p{margin:6px 0}
 .items{list-style:none;margin:0;padding:0 0 6px}
-.item{display:flex;align-items:flex-start;gap:8px;padding:7px 12px 7px 10px;border-top:1px solid var(--line);
+.item{display:flex;align-items:flex-start;gap:8px;padding:7px 12px 7px 8px;border-top:1px solid var(--line);
   cursor:pointer;position:relative}
 .item:hover{background:var(--gray-soft)}
 .item.sel{background:var(--acc-soft)}
+.item.chk{background:var(--acc-soft);box-shadow:inset 2px 0 0 var(--acc)}
+.idone{color:var(--green);font-weight:700;margin-right:4px}
 .item.dragging{opacity:.35}
 .item.dropbefore::before{content:"";position:absolute;left:0;right:0;top:-1px;height:2px;background:var(--drop)}
 .item.dropafter::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--drop)}
 .grip{color:var(--mut);cursor:grab;padding-top:1px;font-size:13px}
+.inum{flex:none;min-width:17px;text-align:right;padding-top:3.5px;
+  font:600 10.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-variant-numeric:tabular-nums;letter-spacing:.3px;
+  color:var(--mut);opacity:.45;user-select:all}
+.item:hover .inum{opacity:.85}
+.item.sel .inum{opacity:.85;color:var(--acc)}
+.item.done .inum{opacity:.25}
 .item input[type=checkbox]{margin-top:3px;accent-color:var(--green)}
 .ititle{flex:1;min-width:0}
 .item.done .ititle .t{color:var(--mut);text-decoration:line-through}
@@ -247,6 +266,16 @@ dialog textarea{min-height:180px;font-family:ui-monospace,Menlo,monospace;font-s
   </div>
 </form></dialog>
 
+<dialog id="moveDlg"><form method="dialog" onsubmit="return false">
+  <h3 id="moveDlgTitle">Move items</h3>
+  <label>Move to</label><select id="m_sec"></select>
+  <div class="dlgrow">
+    <span class="grow"></span>
+    <button onclick="moveDlg.close()">Cancel</button>
+    <button class="primary" onclick="confirmMoveDlg()">Move</button>
+  </div>
+</form></dialog>
+
 <dialog id="relDlg"><form method="dialog" onsubmit="return false">
   <h3 id="relDlgTitle">Release</h3>
   <label>Name</label><input type="text" id="r_title">
@@ -283,7 +312,7 @@ dialog textarea{min-height:180px;font-family:ui-monospace,Menlo,monospace;font-s
 <script>
 "use strict";
 // ═════════ baked demo seed (schema 3) — shown until you link or create a roadmap-data.json ═════════
-const SEED = {"schema":3,"project":"Drizzle","agent":"Agent","releases":[{"id":"v1-0","title":"v1.0 — First public release","status":"released","open":false,"sub":"Shipped. Everything a first release needs and nothing else. Released releases move to the <b>Released</b> tab.","items":[{"id":"v10-setup","title":"Set up the project, CI and a release script","done":true,"pts":2,"note":"DONE — one command builds and tags","detail":"<p>Items whose short note starts with <b>DONE</b>, <b>BUILT</b>, <b>READY</b> or <b>CODE COMPLETE</b> get an amber note, so you can see at a glance what is waiting on you rather than on the code.</p>"},{"id":"v10-today","title":"Show today's forecast for the current location","done":true,"pts":3,"detail":"<p>The core screen. Location → forecast API → one card with temperature, condition and an icon.</p>"},{"id":"v10-store","title":"App icon and store listing","done":true,"pts":1}]},{"id":"v1-1","title":"v1.1 — Fix what the first users hit","status":"inprogress","open":true,"sub":"Bugs and papercuts from the first week of feedback. The chip on the right is the release status: planned → in progress → submitted → released.","items":[{"id":"v11-crash","title":"Fix the crash when location permission is denied","done":true,"pts":2,"note":"DONE — shipped in build 12","detail":"<p>Repro: deny location on first launch → white screen. Root cause was an unwrapped optional in the location callback.</p><p>Tick the checkbox to mark an item done. Done items hide on the Board unless <b>show done</b> is on.</p>","mt":"2026-09-07T18:12:00.000Z","by":"human"},{"id":"v11-offline","title":"Cache the last forecast so the app opens offline","done":false,"pts":3,"note":"BUILT — needs a device test on a real flight-mode phone","detail":"<p><b>Click any item</b> to open this side panel. Details accept HTML, so an agent can leave a structured hand-off here.</p><p><b>Plan (written by the agent):</b></p><ul><li>Store the last successful response in app storage with its timestamp.</li><li>On launch, render the cached forecast immediately and refresh in the background.</li><li>Show a small “as of 14:05” label when the data is older than an hour.</li></ul><p>This item was edited by the agent in its last session, which is why it is ringed in amber when <b>✨ last update</b> is on.</p>","mt":"2026-09-08T09:30:00.000Z","by":"agent","sess":"c-demo-20260908"},{"id":"v11-hourly","title":"Hourly view for the next 24 hours","done":false,"pts":5,"detail":"<p>Hit <b>✎ Edit</b> to change the title, move it to another release, set effort points or rewrite these notes.</p><p>Drag the <b>⠿</b> grip to reorder items or drop them onto another release header.</p>"},{"id":"v11-units","title":"Settings screen: °C / °F toggle","done":false,"pts":2,"note":"added by the agent — the most requested thing in reviews","detail":"<p>The agent added this item from the command line:</p><pre>python3 roadmap.py add --section v1-1 --title \"Settings screen: °C / °F toggle\" --pts 2</pre><p>It shows a <b>NEW</b> pip while the last-update highlight is on.</p>","mt":"2026-09-08T09:30:00.000Z","by":"agent","sess":"c-demo-20260908"}]},{"id":"v1-2","title":"v1.2 — Home-screen widgets","status":"planned","open":false,"sub":"Not started. Effort points add up per release — the Σ badge in the header — so you can see if a release is getting too fat.","items":[{"id":"v12-small","title":"Small widget: current temperature and icon","done":false,"pts":3},{"id":"v12-medium","title":"Medium widget: the next six hours","done":false,"pts":5},{"id":"v12-refresh","title":"Widget refresh budget and battery testing","done":false,"pts":2,"note":"talk to the agent about the platform limits first"}]}],"backlog":{"open":true,"items":[{"id":"bl-alerts","title":"Severe weather alerts","done":false,"note":"needs a data source first","detail":"<p>The backlog is where ideas wait. Drag an item into a release when you commit to it.</p>"},{"id":"bl-share","title":"Share a forecast as an image","done":false,"pts":2},{"id":"bl-map","title":"Dark map tiles","done":false},{"id":"bl-api","title":"Migrate to the v2 forecast API","done":false,"note":"blocked until the new API keys arrive"}]},"notes":[{"id":"n-howto","title":"How this roadmap works (read me first)","open":true,"html":"<p><b class=k>Releases</b> hold <b class=k>items</b>. Items you have not committed to live in the <b class=k>Backlog</b>. Free-form <b class=k>notes</b> like this one sit at the bottom.</p><p><b class=k>Click</b> an item to read its details in the side panel · <b class=k>✎</b> to edit · <b class=k>⠿</b> to drag · <b class=k>checkbox</b> to mark it done · <b class=k>＋ Release</b> to add a release · <b class=k>▲▼</b> on a release header to reorder releases.</p><p><b class=k>Saving.</b> Right now this demo lives in your browser only. Press <b class=k>💾 Save</b> (or <b class=k>Create new file…</b> in the banner) to write a <code>roadmap-data.json</code> next to your project. From then on the page autosaves to that file and watches it for changes — the green dot means it is live.</p><p><b class=k>Export / Import</b> give you a plain JSON copy at any time. <b class=k>Trash</b> keeps everything you delete until you empty it.</p>"},{"id":"n-agent","title":"Working with an AI coding agent","open":true,"html":"<p>The point of this tool: <b class=k>you and your agent edit the same file</b>. You use this page; the agent uses <code>roadmap.py</code> from the terminal (Claude Code, Codex, Cursor, Copilot — anything that can run a Python script).</p><p>Every node the agent touches is stamped, so the <b class=k>✨ last update</b> toggle in the header rings exactly what changed in its most recent session — <b class=k>NEW</b>, <b class=k>EDITED</b>, <b class=k>MOVED</b>, or a struck-through ghost row for deletions. Turn it on now: two items in v1.1 and one deleted item were touched by a demo agent session. Use <b class=k>‹ older</b> / <b class=k>newer ›</b> to walk back through earlier sessions.</p><p>If you both edit the same field before the file syncs, <b class=k>your edit wins</b> and the agent's version is listed in a red banner so nothing is lost silently.</p><p>Tell your agent about the tool by pasting the snippet from <code>agent-instructions.md</code> into your <code>CLAUDE.md</code>, <code>AGENTS.md</code> or rules file.</p>"}],"trash":[{"kind":"item","from":"v1-1","at":"2026-09-08","payload":{"id":"v11-splash","title":"Remove the 2-second splash screen delay","done":false,"pts":1,"note":"moved into the crash fix — same code path"}}],"agentLog":[{"id":"c-demo-20260908","at":"2026-09-08T09:30:00.000Z","note":"Demo session: reviewed v1.1 after the crash fix landed","changes":[{"id":"v11-offline","title":"Cache the last forecast so the app opens offline","kind":"edit","section":"v1-1","fields":["detail","note"],"at":"2026-09-08T09:30:00.000Z","sess":"c-demo-20260908"},{"id":"v11-units","title":"Settings screen: °C / °F toggle","kind":"add","section":"v1-1","fields":[],"at":"2026-09-08T09:30:00.000Z","sess":"c-demo-20260908"},{"id":"v11-splash","title":"Remove the 2-second splash screen delay","kind":"delete","section":"v1-1","fields":[],"at":"2026-09-08T09:30:00.000Z","sess":"c-demo-20260908"}]}],"modified":"2026-09-08T09:30:00.000Z"};
+const SEED = {"schema":3,"project":"Drizzle","agent":"Agent","releases":[{"id":"v1-0","title":"v1.0 — First public release","status":"released","open":false,"sub":"Shipped. Everything a first release needs and nothing else. Released releases move to the <b>Released</b> tab.","items":[{"id":"v10-setup","title":"Set up the project, CI and a release script","done":true,"pts":2,"note":"DONE — one command builds and tags","detail":"<p>Items whose short note starts with <b>DONE</b>, <b>BUILT</b>, <b>READY</b> or <b>CODE COMPLETE</b> get an amber note, so you can see at a glance what is waiting on you rather than on the code.</p>"},{"id":"v10-today","title":"Show today's forecast for the current location","done":true,"pts":3,"detail":"<p>The core screen. Location → forecast API → one card with temperature, condition and an icon.</p>"},{"id":"v10-store","title":"App icon and store listing","done":true,"pts":1}]},{"id":"v1-1","title":"v1.1 — Fix what the first users hit","status":"inprogress","open":true,"sub":"Bugs and papercuts from the first week of feedback. The chip on the right is the release status: planned → in progress → submitted → released.","items":[{"id":"v11-crash","title":"Fix the crash when location permission is denied","done":true,"pts":2,"note":"DONE — shipped in build 12","detail":"<p>Repro: deny location on first launch → white screen. Root cause was an unwrapped optional in the location callback.</p><p>Ticking a row <b>selects</b> it — the release header turns into a bar that marks the whole selection done, moves it, or deletes it. A done item gets a green ✓ and hides on the Board unless <b>show done</b> is on. For a single item, <b>✎ Edit</b> has a Done checkbox too.</p>","mt":"2026-09-07T18:12:00.000Z","by":"human"},{"id":"v11-offline","title":"Cache the last forecast so the app opens offline","done":false,"pts":3,"note":"BUILT — needs a device test on a real flight-mode phone","detail":"<p><b>Click any item</b> to open this side panel. Details accept HTML, so an agent can leave a structured hand-off here.</p><p><b>Plan (written by the agent):</b></p><ul><li>Store the last successful response in app storage with its timestamp.</li><li>On launch, render the cached forecast immediately and refresh in the background.</li><li>Show a small “as of 14:05” label when the data is older than an hour.</li></ul><p>This item was edited by the agent in its last session, which is why it is ringed in amber when <b>✨ last update</b> is on.</p>","mt":"2026-09-08T09:30:00.000Z","by":"agent","sess":"c-demo-20260908"},{"id":"v11-hourly","title":"Hourly view for the next 24 hours","done":false,"pts":5,"detail":"<p>Hit <b>✎ Edit</b> to change the title, move it to another release, set effort points or rewrite these notes.</p><p>Drag the <b>⠿</b> grip to reorder items or drop them onto another release header.</p>"},{"id":"v11-units","title":"Settings screen: °C / °F toggle","done":false,"pts":2,"note":"added by the agent — the most requested thing in reviews","detail":"<p>The agent added this item from the command line:</p><pre>python3 roadmap.py add --section v1-1 --title \"Settings screen: °C / °F toggle\" --pts 2</pre><p>It shows a <b>NEW</b> pip while the last-update highlight is on.</p>","mt":"2026-09-08T09:30:00.000Z","by":"agent","sess":"c-demo-20260908"}]},{"id":"v1-2","title":"v1.2 — Home-screen widgets","status":"planned","open":false,"sub":"Not started. Effort points add up per release — the Σ badge in the header — so you can see if a release is getting too fat.","items":[{"id":"v12-small","title":"Small widget: current temperature and icon","done":false,"pts":3},{"id":"v12-medium","title":"Medium widget: the next six hours","done":false,"pts":5},{"id":"v12-refresh","title":"Widget refresh budget and battery testing","done":false,"pts":2,"note":"talk to the agent about the platform limits first"}]}],"backlog":{"open":true,"items":[{"id":"bl-alerts","title":"Severe weather alerts","done":false,"note":"needs a data source first","detail":"<p>The backlog is where ideas wait. Drag an item into a release when you commit to it.</p>"},{"id":"bl-share","title":"Share a forecast as an image","done":false,"pts":2},{"id":"bl-map","title":"Dark map tiles","done":false},{"id":"bl-api","title":"Migrate to the v2 forecast API","done":false,"note":"blocked until the new API keys arrive"}]},"notes":[{"id":"n-howto","title":"How this roadmap works (read me first)","open":true,"html":"<p><b class=k>Releases</b> hold <b class=k>items</b>. Items you have not committed to live in the <b class=k>Backlog</b>. Free-form <b class=k>notes</b> like this one sit at the bottom.</p><p><b class=k>Click</b> an item to read its details in the side panel · <b class=k>✎</b> to edit · <b class=k>⠿</b> to drag · <b class=k>checkbox</b> to select rows · <b class=k>＋ Release</b> to add a release · <b class=k>▲▼</b> on a release header to reorder releases.</p><p><b class=k>Numbers and bulk actions.</b> Every row is numbered <code>1..n</code> inside its release, so you and your agent can both say “item 3”. Tick a few rows and the release header becomes a bar that marks them done, moves them to another release or deletes them — and a ticked set drags as one block.</p><p><b class=k>Saving.</b> Right now this demo lives in your browser only. Press <b class=k>💾 Save</b> (or <b class=k>Create new file…</b> in the banner) to write a <code>roadmap-data.json</code> next to your project. From then on the page autosaves to that file and watches it for changes — the green dot means it is live.</p><p><b class=k>Export / Import</b> give you a plain JSON copy at any time. <b class=k>Trash</b> keeps everything you delete until you empty it.</p>"},{"id":"n-agent","title":"Working with an AI coding agent","open":true,"html":"<p>The point of this tool: <b class=k>you and your agent edit the same file</b>. You use this page; the agent uses <code>roadmap.py</code> from the terminal (Claude Code, Codex, Cursor, Copilot — anything that can run a Python script).</p><p>Every node the agent touches is stamped, so the <b class=k>✨ last update</b> toggle in the header rings exactly what changed in its most recent session — <b class=k>NEW</b>, <b class=k>EDITED</b>, <b class=k>MOVED</b>, or a struck-through ghost row for deletions. Turn it on now: two items in v1.1 and one deleted item were touched by a demo agent session. Use <b class=k>‹ older</b> / <b class=k>newer ›</b> to walk back through earlier sessions.</p><p>If you both edit the same field before the file syncs, <b class=k>your edit wins</b> and the agent's version is listed in a red banner so nothing is lost silently.</p><p>Tell your agent about the tool by pasting the snippet from <code>agent-instructions.md</code> into your <code>CLAUDE.md</code>, <code>AGENTS.md</code> or rules file.</p>"}],"trash":[{"kind":"item","from":"v1-1","at":"2026-09-08","payload":{"id":"v11-splash","title":"Remove the 2-second splash screen delay","done":false,"pts":1,"note":"moved into the crash fix — same code path"}}],"agentLog":[{"id":"c-demo-20260908","at":"2026-09-08T09:30:00.000Z","note":"Demo session: reviewed v1.1 after the crash fix landed","changes":[{"id":"v11-offline","title":"Cache the last forecast so the app opens offline","kind":"edit","section":"v1-1","fields":["detail","note"],"at":"2026-09-08T09:30:00.000Z","sess":"c-demo-20260908"},{"id":"v11-units","title":"Settings screen: °C / °F toggle","kind":"add","section":"v1-1","fields":[],"at":"2026-09-08T09:30:00.000Z","sess":"c-demo-20260908"},{"id":"v11-splash","title":"Remove the 2-second splash screen delay","kind":"delete","section":"v1-1","fields":[],"at":"2026-09-08T09:30:00.000Z","sess":"c-demo-20260908"}]}],"modified":"2026-09-08T09:30:00.000Z"};
 
 const KEY = "agent-roadmap-v1";
 const HL_KEY = "agent-roadmap-hl";
@@ -302,7 +331,7 @@ function today(){ return new Date().toISOString().slice(0,10); }
 // schema 2 (private predecessor) → schema 3: neutral field names
 function migrate(s){
   if(s.schema===2){
-    if(s.agentLog && !s.agentLog){ s.agentLog=s.agentLog; } delete s.agentLog;
+    if(s.claudeLog && !s.agentLog){ s.agentLog=s.claudeLog; } delete s.claudeLog;
     const BY={mike:"human", claude:"agent"};
     for(const n of nodeIndex(s).values()) if(n.node.by in BY) n.node.by=BY[n.node.by];
     s.schema=3;
@@ -652,7 +681,8 @@ function updateHLBar(){
 }
 function ghostRow(c){
   const li=document.createElement("li"); li.className="item hlghost";
-  li.innerHTML='<span class="grip" style="visibility:hidden">⠿</span>'+
+  li.innerHTML='<span class="inum"></span>'+
+    '<span class="grip" style="visibility:hidden">⠿</span>'+
     '<span class="gx">✕</span>'+
     '<span class="ititle"><span class="t">'+esc(c.title||c.id)+'</span>'+
     ' <span class="inote">— deleted by '+esc(agentName())+'</span></span>';
@@ -869,6 +899,72 @@ function findItem(id){
 function ptsOf(items){ return (items||[]).reduce((s,i)=>s+(parseFloat(i.pts)||0),0); }
 function fmtPts(n){ return (Math.round(n*10)/10).toString(); }
 
+// ═════════ bulk selection ═════════
+// A ticked checkbox SELECTS rather than completes. Selection is scoped to one
+// section at a time — ticking a row in another release starts a fresh selection —
+// so "move these" and "delete these" always have one unambiguous source.
+let CHK=new Set(), chkSec=null;
+function chkClear(){ CHK.clear(); chkSec=null; }
+function chkToggle(id, secId){
+  if(chkSec!==secId){ CHK.clear(); chkSec=secId; }
+  if(CHK.has(id)) CHK.delete(id); else CHK.add(id);
+  if(!CHK.size) chkSec=null;
+  render();
+}
+// selected ids in their on-screen order (they always share one section)
+function chkOrdered(){
+  const sec=chkSec?getSection(chkSec):null;
+  if(!sec) return [];
+  return (sec.items||[]).filter(i=>CHK.has(i.id)).map(i=>i.id);
+}
+// drop ids the sync engine (or a delete) removed from under us
+function chkPrune(){
+  if(!CHK.size) return;
+  for(const id of [...CHK]) if(!findItem(id)) CHK.delete(id);
+  if(!CHK.size) chkSec=null;
+}
+function bulkDone(){
+  const ids=chkOrdered(); if(!ids.length) return;
+  const allDone=ids.every(id=>findItem(id).item.done);
+  for(const id of ids) findItem(id).item.done=!allDone;
+  if(selectedId && CHK.has(selectedId)) closeDrawer();
+  chkClear(); save(); render();
+}
+function bulkDelete(){
+  const ids=chkOrdered(); if(!ids.length) return;
+  if(!confirm("Move "+ids.length+" item"+(ids.length>1?"s":"")+" to Trash? They stay recoverable on the Trash tab.")) return;
+  for(const id of ids){
+    const f=findItem(id); if(!f) continue;
+    f.sec.items.splice(f.idx,1);
+    state.trash.unshift({kind:"item", payload:f.item, from:f.secId, at:today()});
+    if(selectedId===id) closeDrawer();
+  }
+  chkClear(); save(); render();
+}
+function bulkMoveTo(secId){
+  const ids=chkOrdered(); if(!ids.length||!getSection(secId)) return;
+  const moved=[];
+  for(const id of ids){ const f=findItem(id); if(!f) continue; f.sec.items.splice(f.idx,1); moved.push(f.item); }
+  getSection(secId).items.push(...moved);
+  if(selectedId && CHK.has(selectedId) && chkSec!==secId) closeDrawer();
+  chkSec=secId;                       // keep them selected where they landed
+  save(); render();
+}
+
+// ═════════ per-release item numbers ═════════
+// Sequential 1..n within each release, over the items actually on the board.
+// Done items drop out of the numbering when they're hidden (so numbers stay
+// short), but the SEARCH box never renumbers — item 7 reads "7" mid-search.
+let NUM = new Map();
+function numberSection(sec){
+  const hideDone = tab==="board" && !showDone.checked;
+  let n=0;
+  for(const it of (sec.items||[])){
+    if(hideDone && it.done) { NUM.delete(it.id); continue; }
+    NUM.set(it.id, ++n);
+  }
+}
+
 // ═════════ tabs / filters ═════════
 let tab="board", selectedId=null;
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
@@ -885,6 +981,8 @@ document.getElementById("hlChk").onchange=e=>toggleHL(e.target.checked);
 // ═════════ render ═════════
 function render(){
   HL=buildHL();
+  NUM=new Map();
+  chkPrune();
   document.getElementById("appTitle").textContent=(state.project?state.project+" · ":"")+"Roadmap";
   document.title=(state.project?state.project+" · ":"")+"Roadmap";
   document.getElementById("hlLabel").textContent="✨ "+agentName()+"’s last update";
@@ -938,17 +1036,31 @@ function sectionCard(sec, secId, opts){
   const items=sec.items||[];
   const done=items.filter(i=>i.done).length;
   const pts=ptsOf(items);
+  const bulkHere = chkSec===secId && CHK.size>0;
+  const allSelDone = bulkHere && chkOrdered().every(id=>(findItem(id)||{item:{}}).item.done);
   const head=document.createElement("div"); head.className="chead";
   head.innerHTML='<span class="chev">▶</span><span class="ctitle">'+esc(sec.title)+'</span>'+
     (sec.status && sec.status!=="backlog" ? '<span class="chip '+sec.status+'">'+STATUS_LABEL[sec.status]+'</span>' : '')+
     '<span class="ccount">'+done+'/'+items.length+'</span>'+
     (pts>0?'<span class="cpts" title="Total effort points in this release">Σ '+fmtPts(pts)+' pts</span>':'')+
-    '<span class="cbtns">'+
-      (opts.reorder?'<button data-act="up" title="Move up">▲</button><button data-act="down" title="Move down">▼</button>':'')+
-      (secId!=="backlog"?'<button data-act="edit" title="Edit release">✎</button>':'')+
-    '</span>';
+    (bulkHere
+      ? '<span class="bulk">'+
+          '<span class="bulkn">'+CHK.size+' selected</span>'+
+          '<button data-act="bdone">'+(allSelDone?"Mark as not done":"Mark as done")+'</button>'+
+          '<button data-act="bmove">Move…</button>'+
+          '<button data-act="bdel" class="danger">Delete</button>'+
+          '<button data-act="bcancel" class="ghost">Cancel</button>'+
+        '</span>'
+      : '<span class="cbtns">'+
+          (opts.reorder?'<button data-act="up" title="Move up">▲</button><button data-act="down" title="Move down">▼</button>':'')+
+          (secId!=="backlog"?'<button data-act="edit" title="Edit release">✎</button>':'')+
+        '</span>');
   head.onclick=e=>{
     const act=e.target.dataset && e.target.dataset.act;
+    if(act==="bdone"){ bulkDone(); return; }
+    if(act==="bmove"){ openMoveDlg(); return; }
+    if(act==="bdel"){ bulkDelete(); return; }
+    if(act==="bcancel"){ chkClear(); render(); return; }
     if(act==="edit"){ openRelEditor(secId); return; }
     if(act==="up"||act==="down"){ moveRelease(secId, act==="up"?-1:1); return; }
     sec.open=!sec.open; card.classList.toggle("openc",sec.open); ul.style.display=sec.open?"":"none";
@@ -963,12 +1075,13 @@ function sectionCard(sec, secId, opts){
   if(sec.sub){ subEl=document.createElement("div"); subEl.className="csub"; subEl.innerHTML=sec.sub; card.appendChild(subEl); }
 
   const ul=document.createElement("ul"); ul.className="items";
+  numberSection(sec);
   const hideDone = tab==="board" && !showDone.checked;
   let shown=0;
   for(const it of items){
     if(hideDone && it.done && !(HL&&HL.has(it.id))) continue;   // never hide what you're being shown
     if(!matches(it)) continue;
-    ul.appendChild(itemRow(it, secId)); shown++;
+    ul.appendChild(itemRow(it, secId, NUM.get(it.id))); shown++;
   }
   if(HL){
     const s=activeSession();
@@ -992,25 +1105,25 @@ function sectionCard(sec, secId, opts){
   return card;
 }
 
-function itemRow(it, secId){
+function itemRow(it, secId, num){
   const li=document.createElement("li");
   const hlc=HL&&HL.get(it.id);
-  li.className="item"+(it.done?" done":"")+(it.id===selectedId?" sel":"")+(hlc?" hl":"");
+  li.className="item"+(it.done?" done":"")+(CHK.has(it.id)?" chk":"")+(it.id===selectedId?" sel":"")+(hlc?" hl":"");
   li.draggable=true; li.dataset.id=it.id;
   const noteCls=/^(BUILT|CODE COMPLETE|READY|DONE)/i.test(it.note||"")?"inote built":"inote";
   const p=parseFloat(it.pts);
-  li.innerHTML='<span class="grip" title="Drag to move">⠿</span>'+
-    '<input type="checkbox" '+(it.done?"checked":"")+'>'+
-    '<span class="ititle"><span class="t">'+esc(it.title)+'</span>'+
+  li.innerHTML='<span class="inum" title="Item number in this release">'+(num?num:"")+'</span>'+
+    '<span class="grip" title="Drag to move">⠿</span>'+
+    '<input type="checkbox" title="Select for bulk actions" '+(CHK.has(it.id)?"checked":"")+'>'+
+    '<span class="ititle">'+(it.done?'<span class="idone" title="Done">✓</span>':'')+
+    '<span class="t">'+esc(it.title)+'</span>'+
     (it.note?' <span class="'+noteCls+'">— '+esc(it.note)+'</span>':'')+'</span>'+
     (p>0?'<span class="ipts" title="Effort points">'+fmtPts(p)+' pts</span>':'')+
     (hlc?'<span class="hlpip" title="'+esc(agentName())+' '+esc(hlc.kind)+(hlc.fields?" · "+esc(hlc.fields.join(", ")):"")+'">'+esc(hlc.kind==="add"?"NEW":hlc.kind==="move"?"MOVED":"EDITED")+'</span>':'')+
     '<button class="iedit" title="Edit">✎</button>';
   li.querySelector("input").onclick=e=>{
     e.stopPropagation();
-    it.done=e.target.checked;
-    if(selectedId===it.id) closeDrawer();   // checking an item dismisses its open details panel
-    save(); render();
+    chkToggle(it.id, secId);                // ticking selects; the release bar carries the actions
   };
   li.querySelector(".iedit").onclick=e=>{ e.stopPropagation(); openItemEditor(it.id); };
   li.onclick=()=>openDrawer(it.id);
@@ -1087,7 +1200,9 @@ function openDrawer(id){
   const f=findItem(id); if(!f) return;
   selectedId=id;
   document.getElementById("dTitle").textContent=f.item.title;
-  document.getElementById("dWhere").textContent="in "+sectionTitle(f.secId)+(f.item.done?" · done":"");
+  const num=NUM.get(id);
+  document.getElementById("dWhere").textContent="in "+sectionTitle(f.secId)+
+    (num?" · item "+num:"")+(f.item.done?" · done":"");
   const p=parseFloat(f.item.pts);
   const b=document.getElementById("dBody");
   b.innerHTML=(p>0?'<div class="dpts">Effort: '+fmtPts(p)+' pts</div>':"")+
@@ -1251,23 +1366,53 @@ function trashNoteFromDlg(){
   noteDlg.close(); save(); render();
 }
 
+// ═════════ move dialog (bulk) ═════════
+const moveDlg=document.getElementById("moveDlg");
+function openMoveDlg(){
+  const n=CHK.size; if(!n) return;
+  document.getElementById("moveDlgTitle").textContent="Move "+n+" item"+(n>1?"s":"");
+  const sel=document.getElementById("m_sec"); sel.innerHTML="";
+  const groups=[["Active", state.releases.filter(r=>r.status!=="released")],
+                ["", [{id:"backlog",title:"Backlog"}]],
+                ["Released", state.releases.filter(r=>r.status==="released")]];
+  for(const [lab,arr] of groups){ for(const r of arr){
+    if(r.id===chkSec) continue;                       // no point moving them where they already are
+    const o=document.createElement("option"); o.value=r.id;
+    o.textContent=(lab==="Released"?"[released] ":"")+r.title; sel.appendChild(o); } }
+  moveDlg.showModal();
+}
+function confirmMoveDlg(){
+  const to=document.getElementById("m_sec").value;
+  moveDlg.close(); bulkMoveTo(to);
+}
+
 // ═════════ drag & drop ═════════
 let dragId=null;
+// Dragging a ticked row drags the whole ticked set; dragging anything else is a single move.
+function dragBlock(){ return (dragId && CHK.has(dragId) && CHK.size>1) ? chkOrdered() : (dragId?[dragId]:[]); }
+function inDragBlock(id){ return dragBlock().indexOf(id)>=0; }
 function wireItemDrag(li){
   li.addEventListener("dragstart",e=>{
-    dragId=li.dataset.id; li.classList.add("dragging");
+    dragId=li.dataset.id;
+    for(const id of dragBlock()){
+      const el=document.querySelector('.item[data-id="'+id+'"]'); if(el) el.classList.add("dragging");
+    }
     e.dataTransfer.effectAllowed="move"; e.dataTransfer.setData("text/plain",dragId);
   });
-  li.addEventListener("dragend",()=>{ dragId=null; li.classList.remove("dragging"); clearDropMarks(); });
+  li.addEventListener("dragend",()=>{
+    dragId=null;
+    document.querySelectorAll(".item.dragging").forEach(el=>el.classList.remove("dragging"));
+    clearDropMarks();
+  });
   li.addEventListener("dragover",e=>{
-    if(!dragId||dragId===li.dataset.id) return;
+    if(!dragId||inDragBlock(li.dataset.id)) return;
     e.preventDefault(); e.dataTransfer.dropEffect="move";
     clearDropMarks();
     const r=li.getBoundingClientRect();
     li.classList.add(e.clientY < r.top+r.height/2 ? "dropbefore" : "dropafter");
   });
   li.addEventListener("drop",e=>{
-    if(!dragId||dragId===li.dataset.id) return;
+    if(!dragId||inDragBlock(li.dataset.id)) return;
     e.preventDefault(); e.stopPropagation();
     const before=li.classList.contains("dropbefore");
     moveItemNear(dragId, li.dataset.id, before);
@@ -1294,22 +1439,42 @@ function wireHeaderDrop(head, secId){
     moveItemToEnd(dragId, secId);
   });
 }
-function moveItemNear(id, targetId, before){
-  const f=findItem(id), t=findItem(targetId);
-  if(!f||!t) return;
-  if(f.secId!==t.secId && selectedId===id) closeDrawer();   // moved to a different release → dismiss panel
-  f.sec.items.splice(f.idx,1);
-  const ti=t.sec.items.indexOf(t.item);
-  t.sec.items.splice(before?ti:ti+1, 0, f.item);
+// Both primitives move a BLOCK: the ticked set when the dragged row is part of it,
+// otherwise just the one row. Relative order inside the block is preserved.
+function liftBlock(ids){
+  const out=[];
+  for(const id of ids){ const f=findItem(id); if(!f) continue; f.sec.items.splice(f.idx,1); out.push(f.item); }
+  return out;
+}
+function afterBlockMove(ids, destSecId){
+  if(selectedId && ids.indexOf(selectedId)>=0){
+    const f=findItem(selectedId);
+    if(!f || f.secId!==destSecId) closeDrawer();
+  }
+  if(CHK.size && ids.some(id=>CHK.has(id))) chkSec=destSecId;   // selection follows the move
   clearDropMarks(); save(); render();
 }
+function moveItemNear(id, targetId, before){
+  const ids=dragBlock().length?dragBlock():[id];
+  const t=findItem(targetId); if(!t) return;
+  if(ids.indexOf(targetId)>=0){ clearDropMarks(); return; }
+  const destSec=t.sec, destSecId=t.secId;
+  const block=liftBlock(ids); if(!block.length) return;
+  const ti=destSec.items.indexOf(t.item);
+  destSec.items.splice(before?ti:ti+1, 0, ...block);
+  afterBlockMove(ids, destSecId);
+}
 function moveItemToEnd(id, secId){
-  const f=findItem(id); if(!f) return;
-  if(f.secId===secId && f.idx===f.sec.items.length-1){ clearDropMarks(); return; }
-  if(f.secId!==secId && selectedId===id) closeDrawer();     // moved to a different release → dismiss panel
-  f.sec.items.splice(f.idx,1);
-  getSection(secId).items.push(f.item);
-  clearDropMarks(); save(); render();
+  const ids=dragBlock().length?dragBlock():[id];
+  const dest=getSection(secId); if(!dest) return;
+  if(ids.length===1){
+    const f=findItem(ids[0]);
+    if(!f) return;
+    if(f.secId===secId && f.idx===f.sec.items.length-1){ clearDropMarks(); return; }
+  }
+  const block=liftBlock(ids); if(!block.length) return;
+  dest.items.push(...block);
+  afterBlockMove(ids, secId);
 }
 
 // ═════════ export / import ═════════

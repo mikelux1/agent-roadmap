@@ -28,7 +28,7 @@ python3 planning/roadmap.py rm <id>                              # goes to Trash
 python3 planning/roadmap.py end
 ```
 
-Use `sections` to see release ids, `show <id>` to read an item, `ls --grep text` to find one. Effort points are agile estimates (`--pts`), a short `--note` is shown next to the title, and `--detail` is HTML for the side panel. Start a note with `DONE`, `BUILT` or `READY` when the ball is in the human's court.
+Use `sections` to see release ids, `show <id>` to read an item, `ls --grep text` to find one. The board numbers items `1..n` inside each release, so when the human says "item 3 in v1.1" they mean the third line of `roadmap.py ls --section v1-1 --todo` (their board hides done items by default; add `--section` alone to count with them shown). Effort points are agile estimates (`--pts`), a short `--note` is shown next to the title, and `--detail` is HTML for the side panel. Start a note with `DONE`, `BUILT` or `READY` when the ball is in the human's court.
 
 **Rules**
 

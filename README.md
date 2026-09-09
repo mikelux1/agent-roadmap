@@ -49,7 +49,9 @@ Python 3.8+ and Chrome (or another Chromium browser: Edge, Brave, Arc) are the o
 
 - Releases with a status chip (planned → in progress → submitted → released) and a one-line subtitle
 - Items with a title, a short note, effort points, and HTML details in a side panel
-- Drag-and-drop between releases and the backlog, checkboxes for done, per-release point totals
+- Drag-and-drop between releases and the backlog, and per-release point totals
+- A number on every row, `1..n` within its release, so you and the agent can both say "item 3"
+- Tick rows to select them: the release header turns into a bar that marks the whole set done, moves it to another release, or deletes it. Ticked rows drag as one block.
 - A Released tab for shipped work, a Trash tab with restore, free-form notes, search, dark mode
 - Autosave to the linked JSON file plus browser storage as a backup, and Export/Import at any time
 - **✨ last update**: rings everything the agent changed in its latest session, with ‹ older / newer › to step through history
